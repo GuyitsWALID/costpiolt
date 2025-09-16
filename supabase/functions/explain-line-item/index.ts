@@ -117,37 +117,35 @@ const getDeterministicExplanation = (budgetRow: any): ExplainLineItemResponse =>
   };
 };
 
-// Call LLM for explanation
+// Call Google Gemini API for explanation
 const callLLMForExplanation = async (prompt: string): Promise<any> => {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${Deno.env.get('GOOGLE_API_KEY')}`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful AI cost optimization expert. Always return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.2,
-      max_tokens: 800
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 800,
+        topP: 0.8,
+        topK: 10
+      }
     }),
   });
   
   if (!response.ok) {
-    throw new Error(`LLM API error: ${response.status}`);
+    throw new Error(`Gemini API error: ${response.status}`);
   }
   
   const data = await response.json();
-  return JSON.parse(data.choices[0].message.content);
+  const content = data.candidates[0].content.parts[0].text;
+  return JSON.parse(content);
 };
 
 // Main handler
@@ -235,8 +233,8 @@ serve(async (req) => {
         function_name: 'explain_line_item',
         input_data: requestData,
         output_data: response,
-        llm_provider: llmResult ? 'openai' : 'deterministic',
-        llm_model: llmResult ? 'gpt-3.5-turbo' : null,
+        llm_provider: llmResult ? 'google' : 'deterministic',
+        llm_model: llmResult ? 'gemini-1.5-flash' : null,
         latency_ms: Date.now() - startTime,
         success: true
       });

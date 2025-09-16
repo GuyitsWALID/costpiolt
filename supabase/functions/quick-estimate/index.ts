@@ -61,9 +61,10 @@ const COST_FORMULAS = {
   
   // API costs (per 1K tokens)
   api_costs: {
+    'gemini-1.5-flash': 0.00015, // $0.15 per 1M tokens
+    'gemini-1.5-pro': 0.0035,    // $3.50 per 1M tokens
     'gpt-4': 0.03,
-    'gpt-3.5-turbo': 0.002,
-    'claude-3': 0.015
+    'gpt-3.5-turbo': 0.002
   },
   
   // Storage costs (per GB/month)
@@ -113,10 +114,10 @@ Expected JSON format:
 }
 
 Examples for reference:
-- Fine-tuning GPT-3.5: ~$50-200 depending on dataset size
+- Fine-tuning with Gemini: ~$20-100 depending on dataset size
 - GPU training (A100): $1.80/hour, typical fine-tune: 10-50 hours
 - Data scientist: $75-150/hour depending on seniority
-- API inference: $0.002/1K tokens for GPT-3.5
+- API inference: $0.15/1M tokens for Gemini 1.5 Flash
 
 Generate the estimate now:`;
 };
@@ -145,13 +146,13 @@ const calculateDeterministicEstimate = (request: QuickEstimateRequest): BudgetRo
   
   // API costs
   if (request.monthly_tokens > 0) {
-    const api_cost = (request.monthly_tokens / 1000) * COST_FORMULAS.api_costs['gpt-3.5-turbo'];
+    const api_cost = (request.monthly_tokens / 1000) * COST_FORMULAS.api_costs['gemini-1.5-flash'];
     rows.push({
       category: 'compute',
       subcategory: 'api_calls',
       description: `API inference costs - ${(request.monthly_tokens / 1000).toFixed(0)}K tokens/month`,
       quantity: request.monthly_tokens / 1000,
-      unit_cost: COST_FORMULAS.api_costs['gpt-3.5-turbo'],
+      unit_cost: COST_FORMULAS.api_costs['gemini-1.5-flash'],
       total_cost: api_cost,
       unit_type: 'k_tokens',
       confidence_score: 0.9
@@ -191,37 +192,35 @@ const calculateDeterministicEstimate = (request: QuickEstimateRequest): BudgetRo
   return rows;
 };
 
-// Call OpenAI-compatible LLM
+// Call Google Gemini API
 const callLLM = async (prompt: string): Promise<any> => {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${Deno.env.get('GOOGLE_API_KEY')}`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert AI cost estimation assistant. Always return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.1,
-      max_tokens: 2000
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 2000,
+        topP: 0.8,
+        topK: 10
+      }
     }),
   });
   
   if (!response.ok) {
-    throw new Error(`LLM API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
   }
   
   const data = await response.json();
-  return JSON.parse(data.choices[0].message.content);
+  const content = data.candidates[0].content.parts[0].text;
+  return JSON.parse(content);
 };
 
 // Main handler
@@ -346,8 +345,8 @@ serve(async (req) => {
         function_name: 'quick_estimate',
         input_data: requestData,
         output_data: { line_items: finalRows, total: totalEstimate },
-        llm_provider: 'openai',
-        llm_model: 'gpt-3.5-turbo',
+        llm_provider: 'google',
+        llm_model: 'gemini-1.5-flash',
         latency_ms: Date.now() - startTime,
         success: !llmError,
         error_message: llmError
