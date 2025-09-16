@@ -9,6 +9,12 @@ module.exports = {
   darkMode: ["class"],
   theme: {
     extend: {
+      fontFamily: {
+        'khand': ['Khand', 'sans-serif'],
+        'array': ['Array', 'sans-serif'],
+        sans: ['Khand', 'ui-sans-serif', 'system-ui'],
+        heading: ['Array', 'sans-serif'],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

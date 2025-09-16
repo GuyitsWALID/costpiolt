@@ -1,0 +1,14 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Green C shape -->
+  <path d="M 175 325 C 150 300, 115 270, 115 200 C 115 130, 150 100, 200 100 C 230 100, 250 110, 260 125 L 250 150 C 240 135, 225 125, 200 125 C 165 125, 140 150, 140 200 C 140 250, 165 275, 200 275 C 225 275, 240 265, 250 250 L 260 275 C 250 290, 230 300, 200 300 C 175 300, 150 285, 125 260" fill="#00C851" stroke="none"/>
+  
+  <!-- Green arc extensions -->
+  <path d="M 260 125 C 270 110, 285 100, 300 105 L 290 130 C 280 125, 270 130, 265 140" fill="#00C851" stroke="none"/>
+  <path d="M 260 275 C 270 290, 285 300, 300 295 L 290 270 C 280 275, 270 270, 265 260" fill="#00C851" stroke="none"/>
+  
+  <!-- Text "ost" -->
+  <text x="270" y="235" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#2C3E50">ost</text>
+  
+  <!-- Text "pilot" -->
+  <text x="170" y="320" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#2C3E50">pilot</text>
+</svg>

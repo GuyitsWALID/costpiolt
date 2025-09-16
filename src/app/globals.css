@@ -92,10 +92,18 @@ body {
   animation: float 20s infinite linear;
 }
 
+.light .particle {
+  background: rgba(59, 130, 246, 0.2);
+}
+
 .particle:nth-child(2n) {
   background: rgba(168, 85, 247, 0.5);
   animation-delay: -5s;
   animation-duration: 25s;
+}
+
+.light .particle:nth-child(2n) {
+  background: rgba(168, 85, 247, 0.2);
 }
 
 .particle:nth-child(3n) {
@@ -132,6 +140,18 @@ body {
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-dark {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Animated border effect */

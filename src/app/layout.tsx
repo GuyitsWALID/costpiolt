@@ -1,13 +1,11 @@
 ﻿import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-
-const inter = Inter({ subsets: ["latin"] });
+import { AuthProvider } from "@/components/auth-provider";
 
 export const metadata: Metadata = {
-  title: "CostPilot  AI Budget Forecaster",
-  description: "Fast, accurate budget forecasts for AI projects.",
+  title: "CostPilot - AI Budget Forecaster",
+  description: "Fast, accurate budget forecasts for AI projects with intelligent cost optimization.",
 };
 
 export default function RootLayout({
@@ -17,9 +15,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <link href="https://api.fontshare.com/v2/css?f[]=khand@400&f[]=array@400&display=swap" rel="stylesheet" />
+      </head>
+      <body className="font-sans">
         <ThemeProvider defaultTheme="dark">
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

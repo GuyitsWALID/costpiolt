@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import { Zap, Calculator, Brain, Plus, DollarSign } from 'lucide-react';
 import QuickEstimateModal from '@/components/QuickEstimateModal';
 import ExplainLineItemButton from '@/components/ExplainLineItemButton';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { CostPilotLogo } from '@/components/costpilot-logo';
+import { ProtectedRoute } from '@/components/protected-route';
+import { useAuth } from '@/components/auth-provider';
 
 interface BudgetRow {
   id: string;
@@ -18,6 +22,7 @@ interface BudgetRow {
 }
 
 export default function BudgetEditor() {
+  const { user, signOut } = useAuth();
   const [isQuickEstimateOpen, setIsQuickEstimateOpen] = useState(false);
   const [budgetRows, setBudgetRows] = useState<BudgetRow[]>([
     // Sample data for demonstration
@@ -58,20 +63,36 @@ export default function BudgetEditor() {
   const totalCost = budgetRows.reduce((sum, row) => sum + row.total_cost, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Budget Editor</h1>
-              <p className="text-slate-400">Build and manage your AI project budget</p>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background text-foreground bg-gradient-to-br dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 light:from-purple-50 light:via-white light:to-purple-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Budget Editor</h1>
+                <p className="text-muted-foreground">Build and manage your AI project budget</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <ThemeToggle />
+                {/* User Menu */}
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-muted-foreground">
+                    {user?.email}
+                  </span>
+                  <button
+                    onClick={signOut}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-foreground">${totalCost.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">Total Estimate</div>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">${totalCost.toLocaleString()}</div>
-              <div className="text-sm text-slate-400">Total Estimate</div>
-            </div>
-          </div>
 
           {/* Action Buttons */}
           <div className="flex space-x-4">
@@ -97,7 +118,7 @@ export default function BudgetEditor() {
         <div className="glass-dark rounded-2xl border border-blue-500/20 overflow-hidden">
           <div className="p-6 border-b border-slate-700">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">Cost Breakdown</h2>
+              <h2 className="text-xl font-semibold text-foreground">Cost Breakdown</h2>
               <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
                 <Plus className="w-4 h-4" />
                 <span>Add Row</span>
@@ -107,55 +128,55 @@ export default function BudgetEditor() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-800/50">
+              <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-4 text-slate-300 font-medium">Description</th>
-                  <th className="text-right p-4 text-slate-300 font-medium">Quantity</th>
-                  <th className="text-right p-4 text-slate-300 font-medium">Unit Cost</th>
-                  <th className="text-right p-4 text-slate-300 font-medium">Total</th>
-                  <th className="text-center p-4 text-slate-300 font-medium">Confidence</th>
-                  <th className="text-center p-4 text-slate-300 font-medium">Actions</th>
+                  <th className="text-left p-4 text-muted-foreground font-medium">Description</th>
+                  <th className="text-right p-4 text-muted-foreground font-medium">Quantity</th>
+                  <th className="text-right p-4 text-muted-foreground font-medium">Unit Cost</th>
+                  <th className="text-right p-4 text-muted-foreground font-medium">Total</th>
+                  <th className="text-center p-4 text-muted-foreground font-medium">Confidence</th>
+                  <th className="text-center p-4 text-muted-foreground font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {budgetRows.map((row, index) => (
-                  <tr key={row.id} className={index % 2 === 0 ? 'bg-slate-800/20' : 'bg-transparent'}>
+                  <tr key={row.id} className={index % 2 === 0 ? 'bg-muted/20' : 'bg-transparent'}>
                     <td className="p-4">
                       <div>
-                        <div className="text-white font-medium">{row.description}</div>
+                        <div className="text-foreground font-medium">{row.description}</div>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className="inline-block px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">
                             {row.category}
                           </span>
-                          <span className="inline-block px-2 py-1 bg-slate-600 text-slate-300 text-xs rounded">
+                          <span className="inline-block px-2 py-1 bg-muted text-muted-foreground text-xs rounded">
                             {row.subcategory}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-right text-slate-300">
+                    <td className="p-4 text-right text-muted-foreground">
                       {row.quantity} {row.unit_type}
                     </td>
-                    <td className="p-4 text-right text-slate-300">
+                    <td className="p-4 text-right text-muted-foreground">
                       ${row.unit_cost.toFixed(2)}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <DollarSign className="w-4 h-4 text-green-400" />
-                        <span className="text-white font-semibold">
+                        <span className="text-foreground font-semibold">
                           {row.total_cost.toLocaleString()}
                         </span>
                       </div>
                     </td>
                     <td className="p-4 text-center">
                       <div className="inline-flex items-center space-x-1">
-                        <div className="w-12 h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full"
                             style={{ width: `${row.confidence_score * 100}%` }}
                           />
                         </div>
-                        <span className="text-xs text-slate-400 ml-2">
+                        <span className="text-xs text-muted-foreground ml-2">
                           {Math.round(row.confidence_score * 100)}%
                         </span>
                       </div>
@@ -236,6 +257,7 @@ export default function BudgetEditor() {
         onClose={() => setIsQuickEstimateOpen(false)}
         onImport={handleImportEstimate}
       />
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
