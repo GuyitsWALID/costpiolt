@@ -3,19 +3,14 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { 
-  Brain, 
   Calculator, 
-  TrendingUp, 
   Shield, 
   Zap, 
   BarChart3,
   CheckCircle,
   Star,
   ArrowRight,
-  Sparkles,
   Target,
-  Clock,
-  Users,
   Rocket
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -265,7 +260,7 @@ export default function Home() {
             </div>
           <div>
             <p className="text-lg md:text-xl font-khand text-muted-foreground max-w-2xl mx-auto px-4">
-              Choose the plan that fits your team's needs. All plans include our core AI-powered budget forecasting.
+              Choose the plan that fits your team&apos;s needs. All plans include our core AI-powered budget forecasting.
             </p>
           </div>
 

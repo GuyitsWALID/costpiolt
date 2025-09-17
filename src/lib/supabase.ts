@@ -11,6 +11,9 @@ export function createAuthClient() {
   return createClientComponentClient();
 }
 
+// Types for JSON data
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
 // Types for our database tables
 export interface Project {
   id: string;
@@ -24,7 +27,7 @@ export interface Project {
   status: string;
   created_at: string;
   updated_at: string;
-  metadata?: any;
+  metadata?: Json;
 }
 
 export interface BudgetRow {
@@ -40,15 +43,15 @@ export interface BudgetRow {
   source: 'manual' | 'ai_estimate' | 'billing_import';
   confidence_score?: number;
   created_at: string;
-  metadata?: any;
+  metadata?: Json;
 }
 
 export interface AIRun {
   id: string;
   project_id?: string;
   function_name: string;
-  input_data: any;
-  output_data?: any;
+  input_data: Json;
+  output_data?: Json;
   llm_provider?: string;
   llm_model?: string;
   tokens_used?: number;
@@ -69,7 +72,7 @@ export interface ForecastHistory {
   actual_total?: number;
   mae?: number;
   mape?: number;
-  features?: any;
+  features?: Json;
   model_version?: string;
   created_at: string;
 }

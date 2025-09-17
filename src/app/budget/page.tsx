@@ -5,21 +5,9 @@ import { Zap, Calculator, Brain, Plus, DollarSign } from 'lucide-react';
 import QuickEstimateModal from '@/components/QuickEstimateModal';
 import ExplainLineItemButton from '@/components/ExplainLineItemButton';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { CostPilotLogo } from '@/components/costpilot-logo';
 import { ProtectedRoute } from '@/components/protected-route';
 import { useAuth } from '@/components/auth-provider';
-
-interface BudgetRow {
-  id: string;
-  category: string;
-  subcategory: string;
-  description: string;
-  quantity: number;
-  unit_cost: number;
-  total_cost: number;
-  unit_type: string;
-  confidence_score: number;
-}
+import { BudgetRow } from '@/lib/supabase';
 
 export default function BudgetEditor() {
   const { user, signOut } = useAuth();
@@ -28,6 +16,7 @@ export default function BudgetEditor() {
     // Sample data for demonstration
     {
       id: '1',
+      project_id: 'sample-project',
       category: 'compute',
       subcategory: 'gpu_training',
       description: 'GPU training (A100) - 24.0 hours',
@@ -35,10 +24,13 @@ export default function BudgetEditor() {
       unit_cost: 1.80,
       total_cost: 43.20,
       unit_type: 'hours',
-      confidence_score: 0.85
+      source: 'ai_estimate',
+      confidence_score: 0.85,
+      created_at: new Date().toISOString()
     },
     {
       id: '2',
+      project_id: 'sample-project',
       category: 'team',
       subcategory: 'data_scientist',
       description: 'Data Scientist - 40 hours @ $85/hr',
@@ -46,11 +38,13 @@ export default function BudgetEditor() {
       unit_cost: 85,
       total_cost: 3400,
       unit_type: 'hours',
-      confidence_score: 0.90
+      source: 'manual',
+      confidence_score: 0.90,
+      created_at: new Date().toISOString()
     }
   ]);
 
-  const handleImportEstimate = (newRows: any[], projectId: string) => {
+  const handleImportEstimate = (newRows: BudgetRow[], _projectId: string) => {
     // Convert the AI estimate format to our budget row format
     const formattedRows: BudgetRow[] = newRows.map((row, index) => ({
       ...row,
@@ -173,11 +167,11 @@ export default function BudgetEditor() {
                         <div className="w-12 h-2 bg-muted rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full"
-                            style={{ width: `${row.confidence_score * 100}%` }}
+                            style={{ width: `${(row.confidence_score || 0) * 100}%` }}
                           />
                         </div>
                         <span className="text-xs text-muted-foreground ml-2">
-                          {Math.round(row.confidence_score * 100)}%
+                          {Math.round((row.confidence_score || 0) * 100)}%
                         </span>
                       </div>
                     </td>
@@ -245,7 +239,7 @@ export default function BudgetEditor() {
             </div>
             <div className="text-2xl font-bold text-white">
               {budgetRows.length > 0 ? 
-                Math.round(budgetRows.reduce((sum, r) => sum + r.confidence_score, 0) / budgetRows.length * 100) : 0}%
+                Math.round(budgetRows.reduce((sum, r) => sum + (r.confidence_score || 0), 0) / budgetRows.length * 100) : 0}%
             </div>
           </div>
         </div>

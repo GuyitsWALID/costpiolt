@@ -30,9 +30,7 @@ export function ThemeProvider({
   children,
   defaultTheme = "dark",
   storageKey = "costpilot-ui-theme",
-  attribute = "class",
   enableSystem = true,
-  disableTransitionOnChange = false,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme)

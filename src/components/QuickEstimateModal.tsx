@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { X, Zap, DollarSign, Clock, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Zap, DollarSign, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { BudgetRow } from '@/lib/supabase';
 
 interface TeamMember {
   role: string;
@@ -18,17 +19,6 @@ interface QuickEstimateRequest {
   label_count: number;
   monthly_tokens: number;
   team: TeamMember[];
-}
-
-interface BudgetRow {
-  category: string;
-  subcategory: string;
-  description: string;
-  quantity: number;
-  unit_cost: number;
-  total_cost: number;
-  unit_type: string;
-  confidence_score: number;
 }
 
 interface QuickEstimateResponse {
@@ -176,7 +166,7 @@ export default function QuickEstimateModal({ isOpen, onClose, onImport }: QuickE
                   </label>
                   <select
                     value={formData.projectType}
-                    onChange={(e) => setFormData({ ...formData, projectType: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, projectType: e.target.value as 'prototype' | 'fine_tune' | 'production' })}
                     className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="prototype">Prototype/POC</option>
@@ -191,7 +181,7 @@ export default function QuickEstimateModal({ isOpen, onClose, onImport }: QuickE
                   </label>
                   <select
                     value={formData.modelApproach}
-                    onChange={(e) => setFormData({ ...formData, modelApproach: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, modelApproach: e.target.value as 'api_only' | 'fine_tune' | 'from_scratch' })}
                     className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="api_only">API-only (OpenAI, etc.)</option>
@@ -355,7 +345,7 @@ export default function QuickEstimateModal({ isOpen, onClose, onImport }: QuickE
                     <span className="text-sm text-purple-300">Avg Confidence</span>
                   </div>
                   <div className="text-2xl font-bold text-white">
-                    {Math.round(results.line_items.reduce((sum, item) => sum + item.confidence_score, 0) / results.line_items.length * 100)}%
+                    {Math.round(results.line_items.reduce((sum, item) => sum + (item.confidence_score || 0), 0) / results.line_items.length * 100)}%
                   </div>
                 </div>
               </div>
@@ -393,7 +383,7 @@ export default function QuickEstimateModal({ isOpen, onClose, onImport }: QuickE
                             ${item.total_cost.toLocaleString()}
                           </div>
                           <div className="text-sm text-slate-400">
-                            {Math.round(item.confidence_score * 100)}% confidence
+                            {Math.round((item.confidence_score || 0) * 100)}% confidence
                           </div>
                         </div>
                       </div>
