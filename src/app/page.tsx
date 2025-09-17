@@ -258,7 +258,7 @@ export default function Home() {
                 </h2>
               </div>
             </div>
-          <div>
+          <div className="text-center mb-12 md:mb-16">
             <p className="text-lg md:text-xl font-khand text-muted-foreground max-w-2xl mx-auto px-4">
               Choose the plan that fits your team&apos;s needs. All plans include our core AI-powered budget forecasting.
             </p>
@@ -266,7 +266,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 px-4">
             {/* Starter Plan */}
-            <div className="bg-card border border-border p-6 md:p-8 rounded-2xl hover:border-blue-500/50 transition-all">
+            <div className="bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 border border-border p-6 md:p-8 rounded-2xl hover:border-blue-500/50 transition-all">
               <div className="text-center">
                 <h3 className="text-lg md:text-xl font-array font-semibold text-card-foreground mb-2">Starter</h3>
                 <div className="mb-6">
@@ -294,7 +294,7 @@ export default function Home() {
             </div>
 
             {/* Professional Plan */}
-            <div className="bg-card border-2 border-blue-500 p-8 rounded-2xl relative hover:border-blue-400 transition-all transform hover:-translate-y-1">
+            <div className="bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 border-2 border-blue-500 p-8 rounded-2xl relative hover:border-blue-400 transition-all transform hover:-translate-y-1">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-khand font-medium">
                   Most Popular
@@ -335,7 +335,7 @@ export default function Home() {
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-card border border-border p-8 rounded-2xl hover:border-purple-500/50 transition-all">
+            <div className="bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 border border-border p-8 rounded-2xl hover:border-purple-500/50 transition-all">
               <div className="text-center">
                 <h3 className="text-xl font-array font-semibold text-card-foreground mb-2">Enterprise</h3>
                 <div className="mb-6">
@@ -375,20 +375,20 @@ export default function Home() {
       {/* CTA Section */}
       <section className="relative z-10 px-4 md:px-6 py-12 md:py-20">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-card border border-border p-6 md:p-12 rounded-2xl md:rounded-3xl">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-array font-bold text-card-foreground mb-4 md:mb-6">
-              Ready to Optimize Your AI Budget?
-            </h2>
-            <p className="text-lg md:text-xl font-khand text-muted-foreground mb-6 md:mb-8">
-              Join thousands of teams using CostPilot to make smarter AI investment decisions.
-            </p>
-            <Button asChild size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-khand">
-              <Link href="/auth" className="flex items-center justify-center space-x-2">
-                <Rocket className="h-4 w-4 md:h-5 md:w-5" />
-                <span>Start Free Trial</span>
-                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-              </Link>
-            </Button>
+          <div className="bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 border border-border p-6 md:p-12 rounded-2xl md:rounded-3xl">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-array font-bold text-card-foreground mb-4 md:mb-6">
+          Ready to Optimize Your AI Budget?
+        </h2>
+        <p className="text-lg md:text-xl font-khand text-muted-foreground mb-6 md:mb-8">
+          Join thousands of teams using CostPilot to make smarter AI investment decisions.
+        </p>
+        <Button asChild size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-khand">
+          <Link href="/auth" className="flex items-center justify-center space-x-2">
+            <Rocket className="h-4 w-4 md:h-5 md:w-5" />
+            <span>Start Free Trial</span>
+            <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+          </Link>
+        </Button>
           </div>
         </div>
       </section>
