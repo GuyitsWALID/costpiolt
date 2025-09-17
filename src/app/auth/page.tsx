@@ -12,6 +12,11 @@ export default function AuthPage() {
   const supabase = createAuthClient();
 
   const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      console.error('Supabase client not available');
+      return;
+    }
+    
     try {
       setLoading('google');
       const { error } = await supabase.auth.signInWithOAuth({
@@ -29,6 +34,11 @@ export default function AuthPage() {
   };
 
   const handleGithubSignIn = async () => {
+    if (!supabase) {
+      console.error('Supabase client not available');
+      return;
+    }
+    
     try {
       setLoading('github');
       const { error } = await supabase.auth.signInWithOAuth({
@@ -91,7 +101,7 @@ export default function AuthPage() {
               {/* Google Sign In */}
               <Button
                 onClick={handleGoogleSignIn}
-                disabled={loading !== null}
+                disabled={loading !== null || !supabase}
                 className="w-full h-12 bg-white text-gray-900 border border-gray-300 flex items-center justify-center space-x-3 font-khand hover:bg-white hover:text-gray-900 hover:scale-105 transition-transform duration-200"
                 variant="outline"
               >
@@ -125,7 +135,7 @@ export default function AuthPage() {
               {/* GitHub Sign In */}
               <Button
                 onClick={handleGithubSignIn}
-                disabled={loading !== null}
+                disabled={loading !== null || !supabase}
                 className="w-full h-12 bg-gray-900 text-white flex items-center justify-center space-x-3 font-khand hover:bg-gray-900 hover:scale-105 transition-transform duration-200"
               >
                 {loading === 'github' ? (

@@ -1,14 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Only create client if we have the required environment variables
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Auth client for client components
 export function createAuthClient() {
-  return createClientComponentClient();
+  try {
+    return createClientComponentClient();
+  } catch (error) {
+    console.warn('Failed to create Supabase auth client:', error);
+    return null;
+  }
 }
 
 // Types for JSON data
@@ -81,6 +89,7 @@ export interface ForecastHistory {
 export const dbHelpers = {
   // Projects
   async createProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('projects')
       .insert(project)
@@ -92,6 +101,7 @@ export const dbHelpers = {
   },
 
   async getProject(id: string) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -103,6 +113,7 @@ export const dbHelpers = {
   },
 
   async getUserProjects(userId: string) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -115,6 +126,7 @@ export const dbHelpers = {
 
   // Budget Rows
   async createBudgetRows(rows: Omit<BudgetRow, 'id' | 'created_at'>[]) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('budget_rows')
       .insert(rows)
@@ -125,6 +137,7 @@ export const dbHelpers = {
   },
 
   async getProjectBudgetRows(projectId: string) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('budget_rows')
       .select('*')
@@ -136,6 +149,7 @@ export const dbHelpers = {
   },
 
   async updateBudgetRow(id: string, updates: Partial<BudgetRow>) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('budget_rows')
       .update(updates)
@@ -149,6 +163,7 @@ export const dbHelpers = {
 
   // AI Runs
   async logAIRun(run: Omit<AIRun, 'id' | 'created_at'>) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('ai_runs')
       .insert(run)
@@ -160,6 +175,7 @@ export const dbHelpers = {
   },
 
   async getAIRuns(projectId?: string, functionName?: string, limit = 50) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     let query = supabase
       .from('ai_runs')
       .select('*')
@@ -181,6 +197,7 @@ export const dbHelpers = {
 
   // Forecast History
   async saveForecast(forecast: Omit<ForecastHistory, 'id' | 'created_at'>) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('forecast_history')
       .insert(forecast)
@@ -192,6 +209,7 @@ export const dbHelpers = {
   },
 
   async getProjectForecasts(projectId: string) {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase
       .from('forecast_history')
       .select('*')
