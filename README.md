@@ -42,8 +42,19 @@ GOOGLE_API_KEY=your-google-gemini-api-key
 
 ### 3. Set up Supabase
 1. Create a new project at [supabase.com](https://supabase.com)
-2. Run the migration: `supabase db push`
-3. Deploy Edge Functions: `supabase functions deploy`
+2. Run the database migration:
+   ```bash
+   # Option 1: Using psql (if you have direct database access)
+   psql $DATABASE_URL -f migrations/20250921_create_projects.sql
+   
+   # Option 2: Using Supabase CLI (recommended)
+   supabase db push
+   
+   # Option 3: Copy and paste the SQL from migrations/20250921_create_projects.sql
+   # into the Supabase SQL editor at https://app.supabase.com/project/YOUR_PROJECT/sql
+   ```
+3. Configure authentication providers in Supabase dashboard
+4. Enable Row Level Security (RLS) - this is handled by the migration
 
 ### 4. Run Development Server
 ```bash
@@ -70,12 +81,92 @@ Open [http://localhost:3000](http://localhost:3000) to start using CostPilot!
 ```
 ├── src/
 │   ├── app/                 # Next.js App Router
+│   │   ├── dashboard/       # Dashboard page (Module 1)
+│   │   └── api/projects/    # Project CRUD API
 │   ├── components/          # React components
+│   │   ├── Sidebar.tsx      # Dashboard sidebar
+│   │   ├── ProjectList.tsx  # Project listing
+│   │   └── ProjectCreateForm.tsx # Project creation form
 │   └── lib/                 # Utilities and Supabase client
+├── migrations/              # Database migrations
+│   └── 20250921_create_projects.sql
 ├── supabase/
 │   ├── functions/           # Edge Functions (AI processing)
 │   └── migrations/          # Database schema
 └── public/                  # Static assets
+```
+
+## Module 1: Dashboard & Project Management
+
+### Features
+- **Authentication**: Supabase Auth integration with session management
+- **Dashboard**: Main workspace with sidebar navigation
+- **Project Management**: Full CRUD operations for AI projects
+- **Real-time Updates**: Projects list updates after creation
+- **Responsive Design**: Mobile-friendly sidebar that collapses
+
+### API Endpoints
+
+#### POST /api/projects
+Create a new project.
+
+**Request:**
+```json
+{
+  "name": "string (required, max 120)",
+  "description": "string (optional)",
+  "projectType": "prototype|fine_tune|production",
+  "modelApproach": "api_only|fine_tune|from_scratch",
+  "dataset_gb": "number (>=0)",
+  "label_count": "integer (>=0)",
+  "monthly_tokens": "integer (>=0)"
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "project": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "name": "...",
+    "description": "...",
+    "project_type": "...",
+    "model_approach": "...",
+    "dataset_gb": 20,
+    "label_count": 1000,
+    "monthly_tokens": 200000,
+    "created_at": "ISO timestamp"
+  }
+}
+```
+
+#### GET /api/projects
+List user projects.
+
+**Response:**
+```json
+{
+  "success": true,
+  "projects": [ { /* project rows for current user */ } ]
+}
+```
+
+### Testing with cURL
+
+Create a project:
+```bash
+curl -X POST http://localhost:3000/api/projects \
+ -H "Authorization: Bearer <ACCESS_TOKEN>" \
+ -H "Content-Type: application/json" \
+ -d '{"name":"My AI Bot","projectType":"fine_tune","modelApproach":"fine_tune","dataset_gb":10,"label_count":1000,"monthly_tokens":200000}'
+```
+
+List projects:
+```bash
+curl -X GET http://localhost:3000/api/projects \
+ -H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
 ## Key Features Explained
