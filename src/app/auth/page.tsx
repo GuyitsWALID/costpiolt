@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { createAuthClient } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Github, Calculator } from "lucide-react";
@@ -9,48 +10,67 @@ import Link from "next/link";
 
 export default function AuthPage() {
   const [loading, setLoading] = useState<'google' | 'github' | null>(null);
-  const supabase = createAuthClient();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          router.push('/dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    
+    checkSession();
+  }, [router]);
+
+  // Show loading while checking auth status
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Calculator className="h-8 w-8 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = async () => {
-    if (!supabase) {
-      console.error('Supabase client not available');
-      return;
-    }
-    
     try {
       setLoading('google');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/budget`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) throw error;
     } catch (error) {
       console.error('Error signing in with Google:', error);
-    } finally {
       setLoading(null);
     }
   };
 
   const handleGithubSignIn = async () => {
-    if (!supabase) {
-      console.error('Supabase client not available');
-      return;
-    }
-    
     try {
       setLoading('github');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${window.location.origin}/budget`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) throw error;
     } catch (error) {
       console.error('Error signing in with GitHub:', error);
-    } finally {
       setLoading(null);
     }
   };

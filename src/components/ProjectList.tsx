@@ -17,7 +17,7 @@ export default function ProjectList({
 }: ProjectListProps) {
   if (projects.length === 0) {
     return (
-      <div className="text-center py-8 text-slate-400">
+      <div className="text-center py-8 text-gray-600 dark:text-slate-400">
         <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No projects yet</p>
         <p className="text-xs mt-1">Create your first project to get started</p>
@@ -37,7 +37,7 @@ export default function ProjectList({
             className={`w-full text-left p-3 rounded-lg transition-colors group ${
               isSelected 
                 ? 'bg-blue-600 text-white' 
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                : 'text-gray-800 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -53,11 +53,11 @@ export default function ProjectList({
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     isSelected 
                       ? 'bg-blue-500 text-blue-100' 
-                      : 'bg-slate-700 text-slate-300'
+                      : 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-slate-300'
                   }`}>
                     {project.project_type}
                   </span>
-                  <span className={`${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
+                  <span className={`${isSelected ? 'text-blue-100' : 'text-gray-600 dark:text-slate-400'}`}>
                     {format(new Date(project.created_at), 'MMM d')}
                   </span>
                 </div>
