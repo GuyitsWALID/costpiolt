@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
@@ -23,11 +23,7 @@ export default function Dashboard() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
-  useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
+  const checkUser = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -44,7 +40,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkUser();
+  }, [checkUser]);
 
   const fetchProjects = async (accessToken: string) => {
     try {

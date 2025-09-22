@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Calculator, Target, TrendingUp, DollarSign, BarChart3, 
+  Calculator, Target, 
   CheckCircle, AlertCircle, Brain, PieChart, Play, CheckSquare, 
-  Lightbulb, TrendingDown, ArrowRight 
+  Lightbulb, TrendingDown 
 } from 'lucide-react';
 import type { Project } from '@/lib/supabaseClient';
 import { supabase } from '@/lib/supabaseClient';

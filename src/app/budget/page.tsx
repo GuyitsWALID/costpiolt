@@ -44,7 +44,7 @@ export default function BudgetEditor() {
     }
   ]);
 
-  const handleImportEstimate = (newRows: BudgetRow[], _projectId: string) => {
+  const handleImportEstimate = (newRows: BudgetRow[]) => {
     // Convert the AI estimate format to our budget row format
     const formattedRows: BudgetRow[] = newRows.map((row, index) => ({
       ...row,

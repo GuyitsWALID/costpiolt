@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
@@ -77,30 +77,7 @@ export default function BudgetEditor() {
     environment: 'production' as 'development' | 'staging' | 'production'
   });
 
-  useEffect(() => {
-    checkUser();
-  }, [projectId]);
-
-  const checkUser = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user) {
-        router.push('/auth');
-        return;
-      }
-      
-      setUser(session.user);
-      await fetchProjects(session.access_token);
-    } catch (error) {
-      console.error('Error checking user:', error);
-      router.push('/auth');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProjects = async (accessToken: string) => {
+  const fetchProjects = useCallback(async (accessToken: string) => {
     try {
       const response = await fetch('/api/projects', {
         headers: {
@@ -129,7 +106,30 @@ export default function BudgetEditor() {
       console.error('Error fetching project:', error);
       router.push('/dashboard');
     }
-  };
+  }, [projectId, router]);
+
+  const checkUser = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        router.push('/auth');
+        return;
+      }
+      
+      setUser(session.user);
+      await fetchProjects(session.access_token);
+    } catch (error) {
+      console.error('Error checking user:', error);
+      router.push('/auth');
+    } finally {
+      setLoading(false);
+    }
+  }, [router, fetchProjects]);
+
+  useEffect(() => {
+    checkUser();
+  }, [projectId, checkUser]);
 
   const generateAIEstimate = async () => {
     if (!project) return;
@@ -484,7 +484,7 @@ export default function BudgetEditor() {
                     <select
                       value={budgetParams.environment}
                       onChange={(e) => {
-                        setBudgetParams(prev => ({ ...prev, environment: e.target.value as any }));
+                        setBudgetParams(prev => ({ ...prev, environment: e.target.value as 'development' | 'staging' | 'production' }));
                         setHasUnsavedChanges(true);
                       }}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-center"

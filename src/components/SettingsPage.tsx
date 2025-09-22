@@ -11,9 +11,7 @@ import {
   Edit,
   Check,
   X,
-  Crown,
-  Calendar,
-  DollarSign
+  Crown
 } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
@@ -199,7 +197,7 @@ export default function SettingsPage({ user }: SettingsProps) {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id as 'profile' | 'subscription' | 'notifications' | 'security')}
                         className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                           activeTab === tab.id
                             ? 'border-blue-500 text-blue-600 dark:text-blue-400'
