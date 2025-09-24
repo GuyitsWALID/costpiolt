@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
   Dialog,
@@ -31,17 +30,6 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon
 } from '@mui/icons-material';
-
-interface PriceMap {
-  gpu_hours: {
-    small: number;
-    medium: number;
-    large: number;
-  };
-  token_unit_cost: number;
-  label_unit_cost: number;
-  timestamp: number;
-}
 
 interface CostEstimation {
   total_estimated_cost: number;
@@ -90,8 +78,6 @@ const LABELING_SERVICES = [
 ];
 
 export default function ProjectCreateDialog({ open, onClose, onSuccess }: ProjectCreateDialogProps) {
-  const router = useRouter();
-
   // Form state - exactly matching database schema
   const [formData, setFormData] = useState({
     name: '',
@@ -193,13 +179,14 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
       resetForm();
       onSuccess?.(project.id);
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating project:', error);
-      setErrors({ submit: error.message || 'Failed to create project. Please try again.' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create project. Please try again.';
+      setErrors({ submit: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, isSubmitting, supabase, costEstimation, onSuccess, onClose, resetForm]);
+  }, [formData, validateForm, isSubmitting, costEstimation, onSuccess, onClose, resetForm]);
 
   const handleClose = useCallback(() => {
     if (!isSubmitting) {

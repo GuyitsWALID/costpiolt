@@ -5,17 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { X } from 'lucide-react';
 
-interface PriceMap {
-  gpu_hours: {
-    small: number;
-    medium: number;
-    large: number;
-  };
-  token_unit_cost: number;
-  label_unit_cost: number;
-  timestamp: number;
-}
-
 interface CostEstimation {
   total_estimated_cost: number;
   cost_breakdown: Record<string, number>;
