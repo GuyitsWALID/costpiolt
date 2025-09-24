@@ -17,7 +17,8 @@ import type { User } from '@supabase/supabase-js';
 import type { Project } from '@/lib/supabaseClient';
 import { supabase } from '@/lib/supabaseClient';
 import ProjectList from './ProjectList';
-import ProjectCreateForm from './ProjectCreateForm';
+import ProjectCreateDialog from '@/components/ProjectCreateDialog';
+import { MaterialThemeProvider } from './MaterialThemeProvider';
 
 type ViewType = 'projects' | 'budget' | 'settings';
 
@@ -210,13 +211,14 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Create Project Modal */}
-      {showCreateForm && (
-        <ProjectCreateForm
+      {/* Create Project Dialog */}
+      <MaterialThemeProvider>
+        <ProjectCreateDialog
+          open={showCreateForm}
           onClose={() => setShowCreateForm(false)}
-          onProjectCreated={handleProjectCreated}
+          onSuccess={handleProjectCreated}
         />
-      )}
+      </MaterialThemeProvider>
     </>
   );
 }

@@ -53,7 +53,7 @@ type ViewType = 'projects' | 'budget' | 'settings';
 export default function BudgetEditor() {
   const router = useRouter();
   const params = useParams();
-  const projectId = params.id as string;
+  const projectId = params?.id as string;
   
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);

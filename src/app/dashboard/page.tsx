@@ -8,7 +8,9 @@ import type { Project } from '@/lib/supabaseClient';
 import Sidebar from '@/components/Sidebar';
 import BudgetTool from '@/components/BudgetTool';
 import SettingsPage from '@/components/SettingsPage';
-import { Calculator, Sun, Moon } from 'lucide-react';
+import ProjectCreateDialog from '@/components/ProjectCreateDialog';
+import { MaterialThemeProvider } from '@/components/MaterialThemeProvider';
+import { Calculator, Sun, Moon, Plus } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 
 type ViewType = 'projects' | 'budget' | 'settings';
@@ -20,6 +22,7 @@ export default function Dashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('projects');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
@@ -73,6 +76,17 @@ export default function Dashboard() {
     if (session?.access_token) {
       await fetchProjects(session.access_token);
     }
+    setShowCreateForm(false);
+  };
+
+  const handleCreateProjectSuccess = (projectId: string) => {
+    handleProjectCreated();
+    // Navigate to the new project's budget editor
+    router.push(`/projects/${projectId}/budget-editor`);
+  };
+
+  const handleShowCreateForm = () => {
+    setShowCreateForm(true);
   };
 
   const handleProjectSelect = (projectId: string) => {
@@ -181,8 +195,21 @@ export default function Dashboard() {
                 <div>
                   {/* Projects Overview */}
                   <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Projects Dashboard</h1>
-                    <p className="text-gray-600 dark:text-gray-300">Manage your AI projects and track budget forecasts</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Projects Dashboard</h1>
+                        <p className="text-gray-600 dark:text-gray-300">Manage your AI projects and track budget forecasts</p>
+                      </div>
+                      {projects.length > 0 && (
+                        <button
+                          onClick={handleShowCreateForm}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                          <Plus className="h-5 w-5 mr-2" />
+                          Create Project
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {projects.length > 0 ? (
@@ -254,9 +281,10 @@ export default function Dashboard() {
                       </p>
                       <div className="flex justify-center space-x-4">
                         <button
-                          onClick={() => (document.querySelector('[data-create-project]') as HTMLButtonElement)?.click()}
+                          onClick={handleShowCreateForm}
                           className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                         >
+                          <Plus className="h-5 w-5 mr-2" />
                           Create Your First Project
                         </button>
                       </div>
@@ -301,6 +329,15 @@ export default function Dashboard() {
       <div className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}>
         {renderMainContent()}
       </div>
-    </div>
+
+      {/* Create Project Dialog */}
+      <MaterialThemeProvider>
+        <ProjectCreateDialog
+          open={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={handleCreateProjectSuccess}
+        />
+      </MaterialThemeProvider>
+      </div>
   );
 }
