@@ -57,6 +57,11 @@ export default function ProjectList({
                   }`}>
                     {project.project_type}
                   </span>
+                  {project.budget && (
+                    <span className={`${isSelected ? 'text-blue-100' : 'text-gray-600 dark:text-slate-400'}`}>
+                      ${(project.budget / 1000).toFixed(0)}k
+                    </span>
+                  )}
                   <span className={`${isSelected ? 'text-blue-100' : 'text-gray-600 dark:text-slate-400'}`}>
                     {format(new Date(project.created_at), 'MMM d')}
                   </span>

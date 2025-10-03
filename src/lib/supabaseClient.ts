@@ -20,6 +20,7 @@ export interface Project {
   metadata: Record<string, unknown>
   created_at: string
   updated_at: string
+  budget?: number
 }
 
 export interface CreateProjectRequest {

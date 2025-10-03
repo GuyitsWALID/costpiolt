@@ -1,0 +1,26 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/__tests__", "<rootDir>/src"],
+  "testMatch": [
+    "**/__tests__/**/*.test.ts",
+    "**/__tests__/**/*.test.tsx"
+  ],
+  "transform": {
+    "^.+\\.tsx?$": "ts-jest"
+  },
+  "moduleNameMapping": {
+    "^@/(.*)$": "<rootDir>/src/$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/__tests__/setup.ts"],
+  "collectCoverageFrom": [
+    "src/**/*.{ts,tsx}",
+    "pages/api/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!**/*.config.{js,ts}",
+    "!**/node_modules/**"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["text", "lcov", "html"],
+  "testTimeout": 10000
+}

@@ -42,10 +42,11 @@ GOOGLE_API_KEY=your-google-gemini-api-key
 
 ### 3. Set up Supabase
 1. Create a new project at [supabase.com](https://supabase.com)
-2. Run the database migration:
+2. Run the database migrations:
    ```bash
    # Option 1: Using psql (if you have direct database access)
-   psql $DATABASE_URL -f migrations/20250921_create_projects.sql
+   psql $DATABASE_URL -f supabase/migrations/20250916000001_create_tables.sql
+   psql $DATABASE_URL -f migrations/20250930_create_budget_rows.sql
    
    # Option 2: Using Supabase CLI (recommended)
    supabase db push
@@ -188,12 +189,93 @@ curl -X GET http://localhost:3000/api/projects \
 - Actual vs. estimated cost tracking
 - Historical trend analysis
 
+## Module 2: Deterministic Budget Calculator
+
+### Testing
+
+Run unit tests for the deterministic calculation function:
+```bash
+npm test __tests__/calcDeterministic.test.ts
+```
+
+Run integration tests for the API endpoint:
+```bash
+npm test __tests__/api.calcDeterministic.test.ts
+```
+
+Run all tests:
+```bash
+npm test
+```
+
+### Database Migration
+
+Apply the budget_rows table migration:
+```bash
+# Using psql
+psql $DATABASE_URL -f migrations/20250930_create_budget_rows.sql
+
+# Using Supabase CLI
+supabase db push
+```
+
+### API Usage
+
+POST `/api/calc/deterministic` - Calculate deterministic budget:
+```bash
+curl -X POST http://localhost:3000/api/calc/deterministic \
+ -H "Content-Type: application/json" \
+ -H "Authorization: Bearer <ACCESS_TOKEN>" \
+ -d '{
+  "projectId": "uuid-or-null",
+  "dataset_gb": 20.5,
+  "model_size": "medium",
+  "epochs_per_gb": 2,
+  "label_count": 5000,
+  "monthly_tokens": 200000,
+  "team": [
+    { "role": "developer", "hours": 40, "hourly_rate": 30 }
+  ],
+  "price_map": {
+    "gpu_hours": { "small": 1.5, "medium": 3.2, "large": 7.0 },
+    "token_unit_cost": 0.00002,
+    "label_unit_cost": 0.06
+  }
+}'
+```
+
+### Component Usage
+
+```tsx
+import DeterministicCalcButton from '@/components/DeterministicCalcButton';
+
+<DeterministicCalcButton
+  input={{
+    projectId: "project-uuid",
+    dataset_gb: 10,
+    model_size: "medium",
+    epochs_per_gb: 2,
+    label_count: 1000,
+    monthly_tokens: 100000,
+    team: [{ role: "developer", hours: 40, hourly_rate: 50 }],
+    price_map: {
+      gpu_hours: { small: 1.5, medium: 3.2, large: 7.0 },
+      token_unit_cost: 0.00002,
+      label_unit_cost: 0.06
+    }
+  }}
+  authToken="user-access-token"
+  onSuccess={(result) => console.log('Budget calculated:', result)}
+  onError={(error) => console.error('Calculation failed:', error)}
+/>
+```
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test thoroughly (run `npm test`)
 5. Submit a pull request
 
 ## License

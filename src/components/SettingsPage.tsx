@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import StripeSubscriptionButton from './StripeSubscriptionButton';
+import StripeTestCard from './StripeTestCard';
 
 interface UserProfile {
   full_name: string;
@@ -23,12 +25,23 @@ interface UserProfile {
   bio?: string;
 }
 
+interface UserSubscription {
+  id: string;
+  plan_name: string;
+  plan_price: number;
+  status: string;
+  current_period_start: string;
+  current_period_end: string;
+  stripe_subscription_id: string;
+}
+
 interface SubscriptionPlan {
   id: string;
   name: string;
   price: number;
   interval: 'month' | 'year';
   features: string[];
+  stripePrice: string;
   current: boolean;
 }
 
@@ -53,10 +66,42 @@ export default function SettingsPage({ user }: SettingsProps) {
     budget_reminders: true,
     marketing: false
   });
+  const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
 
-  // Fetch user profile data on component mount
+  // Updated subscription plans with Stripe price IDs
+  const subscriptionPlans: SubscriptionPlan[] = [
+    {
+      id: 'free',
+      name: 'Free',
+      price: 0,
+      interval: 'month',
+      features: ['3 Projects', 'Basic Budget Tracking', 'Email Support'],
+      stripePrice: '', // No Stripe price for free plan
+      current: !userSubscription || userSubscription.status !== 'active'
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: 19,
+      interval: 'month',
+      features: ['Unlimited Projects', 'Advanced Analytics', 'Priority Support', 'Export Data'],
+      stripePrice: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_1234567890',
+      current: userSubscription?.plan_name === 'Pro' && userSubscription.status === 'active'
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 49,
+      interval: 'month',
+      features: ['Everything in Pro', 'Team Collaboration', 'Custom Integrations', 'Dedicated Support'],
+      stripePrice: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || 'price_0987654321',
+      current: userSubscription?.plan_name === 'Enterprise' && userSubscription.status === 'active'
+    }
+  ];
+
+  // Fetch user profile and subscription data on component mount
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserData = async () => {
       try {
         // Get the latest user data from Supabase
         const { data: { user: currentUser }, error } = await supabase.auth.getUser();
@@ -70,44 +115,28 @@ export default function SettingsPage({ user }: SettingsProps) {
             phone: currentUser.user_metadata?.phone || '',
             bio: currentUser.user_metadata?.bio || ''
           });
+
+          // Fetch user subscription
+          const { data: subscription } = await supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('status', 'active')
+            .single();
+
+          if (subscription) {
+            setUserSubscription(subscription);
+          }
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching user data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserProfile();
+    fetchUserData();
   }, []);
-
-  // Mock subscription data - in a real app, this would come from your billing provider
-  const subscriptionPlans: SubscriptionPlan[] = [
-    {
-      id: 'free',
-      name: 'Free',
-      price: 0,
-      interval: 'month',
-      features: ['3 Projects', 'Basic Budget Tracking', 'Email Support'],
-      current: true
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: 19,
-      interval: 'month',
-      features: ['Unlimited Projects', 'Advanced Analytics', 'Priority Support', 'Export Data'],
-      current: false
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 49,
-      interval: 'month',
-      features: ['Everything in Pro', 'Team Collaboration', 'Custom Integrations', 'Dedicated Support'],
-      current: false
-    }
-  ];
 
   const currentPlan = subscriptionPlans.find(plan => plan.current);
 
@@ -337,6 +366,9 @@ export default function SettingsPage({ user }: SettingsProps) {
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Subscription & Billing</h2>
 
+              {/* Test Card Info for Development */}
+              <StripeTestCard />
+
               {/* Current Plan */}
               <div className="mb-8">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Current Plan</h3>
@@ -349,12 +381,20 @@ export default function SettingsPage({ user }: SettingsProps) {
                         <p className="text-blue-700 dark:text-blue-300">
                           ${currentPlan?.price}/{currentPlan?.interval} • {currentPlan?.features.length} features
                         </p>
+                        {userSubscription && (
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            Status: {userSubscription.status} • ID: {userSubscription.stripe_subscription_id}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-blue-600 dark:text-blue-400">Next billing date</p>
                       <p className="font-medium text-blue-900 dark:text-blue-100">
-                        {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                        {userSubscription 
+                          ? new Date(userSubscription.current_period_end).toLocaleDateString()
+                          : 'N/A (Free Plan)'
+                        }
                       </p>
                     </div>
                   </div>
@@ -399,16 +439,13 @@ export default function SettingsPage({ user }: SettingsProps) {
                         ))}
                       </ul>
 
-                      <button
-                        disabled={plan.current}
-                        className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${
-                          plan.current
-                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        }`}
-                      >
-                        {plan.current ? 'Current Plan' : `Upgrade to ${plan.name}`}
-                      </button>
+                      <StripeSubscriptionButton
+                        priceId={plan.stripePrice}
+                        planName={plan.name}
+                        planPrice={plan.price}
+                        isCurrentPlan={plan.current}
+                        disabled={plan.price === 0} // Disable for free plan
+                      />
                     </div>
                   ))}
                 </div>
@@ -428,11 +465,30 @@ export default function SettingsPage({ user }: SettingsProps) {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                          No billing history available for free plan
-                        </td>
-                      </tr>
+                      {userSubscription ? (
+                        <tr>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {new Date(userSubscription.current_period_start).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {userSubscription.plan_name} Plan - Monthly
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            ${userSubscription.plan_price}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                              {userSubscription.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                            No billing history available for free plan
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

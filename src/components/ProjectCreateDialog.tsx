@@ -79,7 +79,7 @@ const LABELING_SERVICES = [
 
 export default function ProjectCreateDialog({ open, onClose, onSuccess }: ProjectCreateDialogProps) {
   // Form state - exactly matching database schema
-  const [formData, setFormData] = useState({
+  const [projectForm, setProjectForm] = useState({
     name: '',
     description: '',
     project_type: '',
@@ -94,34 +94,34 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
   });
 
   // UI state
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [costEstimation, setCostEstimation] = useState<CostEstimation | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [estimation, setEstimation] = useState<CostEstimation | null>(null);
   const [priceWarnings, setPriceWarnings] = useState<string[]>([]);
   const [showCostBreakdown, setShowCostBreakdown] = useState(false);
 
   const handleInputChange = useCallback((field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setProjectForm(prev => ({ ...prev, [field]: value }));
     
     // Clear field-specific errors
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
     }
-  }, [errors]);
+  }, [formErrors]);
 
-  const validateForm = useCallback((): boolean => {
+  const validateProjectForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Project name is required';
-    if (!formData.project_type) newErrors.project_type = 'Project type is required';
-    if (!formData.model_approach) newErrors.model_approach = 'Model approach is required';
+    if (!projectForm.name.trim()) newErrors.name = 'Project name is required';
+    if (!projectForm.project_type) newErrors.project_type = 'Project type is required';
+    if (!projectForm.model_approach) newErrors.model_approach = 'Model approach is required';
 
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [projectForm]);
 
-  const resetForm = useCallback(() => {
-    setFormData({
+  const resetProjectForm = useCallback(() => {
+    setProjectForm({
       name: '',
       description: '',
       project_type: '',
@@ -134,17 +134,17 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
       estimated_gpu_hours: '',
       labeling_service_provider: ''
     });
-    setErrors({});
-    setCostEstimation(null);
+    setFormErrors({});
+    setEstimation(null);
     setPriceWarnings([]);
     setShowCostBreakdown(false);
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    if (!validateForm() || isSubmitting) return;
+  const handleProjectSubmit = async () => {
+    if (!validateProjectForm() || submitting) return;
 
-    setIsSubmitting(true);
-    setErrors({});
+    setSubmitting(true);
+    setFormErrors({});
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -154,51 +154,51 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
 
       const projectData = {
         user_id: user.id,
-        name: formData.name,
-        description: formData.description || null,
-        project_type: formData.project_type,
-        model_approach: formData.model_approach,
-        dataset_gb: formData.dataset_gb ? parseFloat(formData.dataset_gb) : null,
-        label_count: formData.label_count ? parseInt(formData.label_count) : null,
-        monthly_tokens: formData.monthly_tokens ? parseInt(formData.monthly_tokens) : null,
-        llm_provider_model: formData.llm_provider_model || null,
-        gpu_type: formData.gpu_type || null,
-        estimated_gpu_hours: formData.estimated_gpu_hours ? parseFloat(formData.estimated_gpu_hours) : null,
-        labeling_service_provider: formData.labeling_service_provider || null,
-        price_snapshot: costEstimation || null
+        name: projectForm.name,
+        description: projectForm.description || null,
+        project_type: projectForm.project_type,
+        model_approach: projectForm.model_approach,
+        dataset_gb: projectForm.dataset_gb ? parseFloat(projectForm.dataset_gb) : null,
+        label_count: projectForm.label_count ? parseInt(projectForm.label_count) : null,
+        monthly_tokens: projectForm.monthly_tokens ? parseInt(projectForm.monthly_tokens) : null,
+        llm_provider_model: projectForm.llm_provider_model || null,
+        gpu_type: projectForm.gpu_type || null,
+        estimated_gpu_hours: projectForm.estimated_gpu_hours ? parseFloat(projectForm.estimated_gpu_hours) : null,
+        labeling_service_provider: projectForm.labeling_service_provider || null,
+        price_snapshot: estimation || null
       };
 
       const { data: project, error } = await supabase
         .from('projects')
-        .insert([projectData])
+        .insert(projectData)
         .select()
         .single();
 
       if (error) throw error;
 
-      resetForm();
+      resetProjectForm();
       onSuccess?.(project.id);
       onClose();
     } catch (error: unknown) {
       console.error('Error creating project:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create project. Please try again.';
-      setErrors({ submit: errorMessage });
+      setFormErrors({ submit: errorMessage });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
-  }, [formData, validateForm, isSubmitting, costEstimation, onSuccess, onClose, resetForm]);
+  };
 
-  const handleClose = useCallback(() => {
-    if (!isSubmitting) {
-      resetForm();
+  const handleDialogClose = useCallback(() => {
+    if (!submitting) {
+      resetProjectForm();
       onClose();
     }
-  }, [isSubmitting, resetForm, onClose]);
+  }, [submitting, resetProjectForm, onClose]);
 
   return (
     <Dialog 
       open={open} 
-      onClose={handleClose}
+      onClose={handleDialogClose}
       maxWidth="md"
       fullWidth
       PaperProps={{
@@ -214,7 +214,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
             Define your ML project parameters to get accurate cost estimations
           </Typography>
         </Box>
-        <IconButton onClick={handleClose} size="small">
+        <IconButton onClick={handleDialogClose} size="small">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -222,9 +222,9 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
       <Divider />
 
       <DialogContent sx={{ pt: 3 }}>
-        {errors.submit && (
+        {formErrors.submit && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            {errors.submit}
+            {formErrors.submit}
           </Alert>
         )}
 
@@ -238,10 +238,10 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
               <TextField
                 fullWidth
                 label="Project Name"
-                value={formData.name}
+                value={projectForm.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name}
+                error={!!formErrors.name}
+                helperText={formErrors.name}
                 required
               />
               <TextField
@@ -249,7 +249,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                 multiline
                 rows={3}
                 label="Description"
-                value={formData.description}
+                value={projectForm.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Brief description of your project"
               />
@@ -263,10 +263,10 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
             </Typography>
             <Stack spacing={3}>
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
-                <FormControl fullWidth error={!!errors.project_type}>
+                <FormControl fullWidth error={!!formErrors.project_type}>
                   <InputLabel required>Project Type</InputLabel>
                   <Select
-                    value={formData.project_type}
+                    value={projectForm.project_type}
                     onChange={(e) => handleInputChange('project_type', e.target.value)}
                     label="Project Type"
                   >
@@ -276,16 +276,16 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                       </MenuItem>
                     ))}
                   </Select>
-                  {errors.project_type && (
+                  {formErrors.project_type && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                      {errors.project_type}
+                      {formErrors.project_type}
                     </Typography>
                   )}
                 </FormControl>
-                <FormControl fullWidth error={!!errors.model_approach}>
+                <FormControl fullWidth error={!!formErrors.model_approach}>
                   <InputLabel required>Model Approach</InputLabel>
                   <Select
-                    value={formData.model_approach}
+                    value={projectForm.model_approach}
                     onChange={(e) => handleInputChange('model_approach', e.target.value)}
                     label="Model Approach"
                   >
@@ -295,9 +295,9 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                       </MenuItem>
                     ))}
                   </Select>
-                  {errors.model_approach && (
+                  {formErrors.model_approach && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                      {errors.model_approach}
+                      {formErrors.model_approach}
                     </Typography>
                   )}
                 </FormControl>
@@ -316,7 +316,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                   fullWidth
                   label="Dataset Size (GB)"
                   type="number"
-                  value={formData.dataset_gb}
+                  value={projectForm.dataset_gb}
                   onChange={(e) => handleInputChange('dataset_gb', e.target.value)}
                   inputProps={{ min: 0, step: 0.1 }}
                   helperText="Size of your training dataset in GB"
@@ -325,7 +325,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                   fullWidth
                   label="Label Count"
                   type="number"
-                  value={formData.label_count}
+                  value={projectForm.label_count}
                   onChange={(e) => handleInputChange('label_count', e.target.value)}
                   inputProps={{ min: 0, step: 1 }}
                   helperText="Number of different labels/classes"
@@ -336,7 +336,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                   fullWidth
                   label="Monthly Tokens"
                   type="number"
-                  value={formData.monthly_tokens}
+                  value={projectForm.monthly_tokens}
                   onChange={(e) => handleInputChange('monthly_tokens', e.target.value)}
                   inputProps={{ min: 0 }}
                   helperText="Expected monthly token usage"
@@ -345,7 +345,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                   fullWidth
                   label="Estimated GPU Hours"
                   type="number"
-                  value={formData.estimated_gpu_hours}
+                  value={projectForm.estimated_gpu_hours}
                   onChange={(e) => handleInputChange('estimated_gpu_hours', e.target.value)}
                   inputProps={{ min: 0, step: 0.1 }}
                   helperText="Estimated GPU training hours needed"
@@ -364,7 +364,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                 <FormControl fullWidth>
                   <InputLabel>GPU Type</InputLabel>
                   <Select
-                    value={formData.gpu_type}
+                    value={projectForm.gpu_type}
                     onChange={(e) => handleInputChange('gpu_type', e.target.value)}
                     label="GPU Type"
                   >
@@ -378,7 +378,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                 <FormControl fullWidth>
                   <InputLabel>LLM Provider/Model</InputLabel>
                   <Select
-                    value={formData.llm_provider_model}
+                    value={projectForm.llm_provider_model}
                     onChange={(e) => handleInputChange('llm_provider_model', e.target.value)}
                     label="LLM Provider/Model"
                   >
@@ -393,7 +393,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
               <FormControl fullWidth>
                 <InputLabel>Labeling Service Provider</InputLabel>
                 <Select
-                  value={formData.labeling_service_provider}
+                  value={projectForm.labeling_service_provider}
                   onChange={(e) => handleInputChange('labeling_service_provider', e.target.value)}
                   label="Labeling Service Provider"
                 >
@@ -408,7 +408,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
           </Paper>
 
           {/* Cost Estimation Display */}
-          {costEstimation && (
+          {estimation && (
             <Paper elevation={2} sx={{ p: 3, bgcolor: 'info.50', borderRadius: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <AssessmentIcon color="info" sx={{ mr: 1 }} />
@@ -425,7 +425,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
               </Box>
               
               <Typography variant="h4" color="info.main" gutterBottom>
-                ${costEstimation.total_estimated_cost.toLocaleString()}
+                ${estimation.total_estimated_cost.toLocaleString()}
               </Typography>
               
               <Collapse in={showCostBreakdown}>
@@ -433,7 +433,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
                   <Typography variant="subtitle2" gutterBottom>
                     Cost Breakdown:
                   </Typography>
-                  {Object.entries(costEstimation.cost_breakdown).map(([key, value]) => (
+                  {Object.entries(estimation.cost_breakdown).map(([key, value]) => (
                     <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
                       <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
                         {key.replace(/_/g, ' ')}:
@@ -462,19 +462,19 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
 
       <DialogActions sx={{ p: 3, gap: 2 }}>
         <Button 
-          onClick={handleClose} 
+          onClick={handleDialogClose} 
           variant="outlined"
-          disabled={isSubmitting}
+          disabled={submitting}
         >
           Cancel
         </Button>
         <Button 
-          onClick={handleSubmit}
+          onClick={handleProjectSubmit}
           variant="contained"
-          disabled={isSubmitting}
-          startIcon={isSubmitting ? <CircularProgress size={20} /> : <AddIcon />}
+          disabled={submitting}
+          startIcon={submitting ? <CircularProgress size={20} /> : <AddIcon />}
         >
-          {isSubmitting ? 'Creating...' : 'Create Project'}
+          {submitting ? 'Creating...' : 'Create Project'}
         </Button>
       </DialogActions>
     </Dialog>

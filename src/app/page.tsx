@@ -11,7 +11,8 @@ import {
   Star,
   ArrowRight,
   Target,
-  Rocket
+  Rocket,
+  Play
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ export default function Home() {
     animationDelay: string;
     animationDuration: string;
   }>>([]);
-
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   useEffect(() => {
     // Generate particles only on client side to avoid hydration mismatch
@@ -117,7 +118,7 @@ export default function Home() {
             Built for AI project managers and technical leaders.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center px-4">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center px-4 mb-12 md:mb-16">
             <Button
               asChild
               size="lg" 
@@ -126,20 +127,25 @@ export default function Home() {
               <Link href="/auth" className="flex items-center justify-center space-x-2 no-underline">
                 <Zap className="h-4 w-4 md:h-5 md:w-5" />
                 <span>Start Quick Estimate</span>
-              <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="border-blue-600 text-foreground hover:bg-muted dark:border-white dark:text-foreground dark:hover:bg-white/10 px-8 py-4 text-lg font-khand font-semibold transition-all"
+              onClick={() => {
+                const videoSection = document.getElementById('demo-video');
+                videoSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
+              <Play className="h-4 w-4 mr-2" />
               Watch Demo
             </Button>
-            </div>
+          </div>
 
           {/* Trust Indicators */}
-          <div className="mt-12 md:mt-16 flex flex-wrap justify-center items-center gap-4 md:gap-8 text-muted-foreground px-4">
+          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-8 text-muted-foreground px-4">
             <div className="flex items-center space-x-2">
               <Shield className="h-4 w-4 md:h-5 md:w-5 text-green-400" />
               <span className="text-sm md:text-base font-khand">Enterprise Grade</span>
@@ -151,6 +157,103 @@ export default function Home() {
             <div className="flex items-center space-x-2">
               <Star className="h-4 w-4 md:h-5 md:w-5 text-yellow-400" />
               <span className="text-sm md:text-base font-khand">Trusted by 1000+ Teams</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Video Section */}
+      <section id="demo-video" className="relative z-10 px-4 md:px-6 py-12 md:py-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-array font-bold text-foreground mb-4">
+              See CostPilot in Action
+            </h2>
+            <p className="text-lg md:text-xl font-khand text-muted-foreground max-w-2xl mx-auto">
+              Watch how easy it is to get accurate AI project cost estimates in under 3 minutes.
+            </p>
+          </div>
+
+          <div className="relative max-w-4xl mx-auto">
+            <div className="relative bg-gradient-to-br from-blue-900/20 to-purple-900/20 p-3 md:p-6 rounded-2xl md:rounded-3xl border border-blue-500/30 shadow-2xl backdrop-blur-md">
+              {!isVideoPlaying ? (
+                // Video Thumbnail with Play Button
+                <div 
+                  className="relative cursor-pointer group" 
+                  onClick={() => setIsVideoPlaying(true)}
+                  style={{
+                    backgroundImage: 'url(/images/thumbnail.png)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  <div className="aspect-video rounded-xl md:rounded-2xl flex items-center justify-center relative">
+                    {/* Dark overlay for better play button visibility */}
+                    <div className="absolute inset-0 bg-black/30 rounded-xl md:rounded-2xl group-hover:bg-black/40 transition-colors"></div>
+                    
+                    <div className="text-center relative z-10">
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center mx-auto mb-4 transition-all transform group-hover:scale-110 shadow-2xl">
+                        <Play className="h-6 w-6 md:h-8 md:w-8 text-white fill-current" />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                        CostPilot Demo
+                      </h3>
+                      <p className="text-sm md:text-base text-gray-300">
+                        2 minute walkthrough • Create your first budget estimate
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Actual Video Player (no poster/thumbnail)
+                <div className="aspect-video">
+                  <video
+                    className="w-full h-full rounded-xl md:rounded-2xl shadow-lg"
+                    controls
+                    autoPlay
+                    muted
+                    playsInline
+                  >
+                    <source src="/video/demovid.mp4" type="video/mp4" />
+                    <source src="/video/demovid.webm" type="video/webm" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              )}
+            </div>
+
+            {/* Video Features */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-8 md:mt-12">
+              <div className="text-center p-4 md:p-6 bg-white dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Zap className="h-4 w-4 md:h-5 md:w-5 text-blue-400" />
+                </div>
+                <h4 className="font-semibold text-sm md:text-base text-gray-900 dark:text-white mb-2">Quick Setup</h4>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Get started in under 60 seconds with our intuitive interface
+                </p>
+              </div>
+              
+              <div className="text-center p-4 md:p-6 bg-white dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-purple-400" />
+                </div>
+                <h4 className="font-semibold text-sm md:text-base text-gray-900 dark:text-white mb-2">Real-time Estimates</h4>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Watch costs update instantly as you adjust parameters
+                </p>
+              </div>
+              
+              <div className="text-center p-4 md:p-6 bg-white dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Target className="h-4 w-4 md:h-5 md:w-5 text-green-400" />
+                </div>
+                <h4 className="font-semibold text-sm md:text-base text-gray-900 dark:text-white mb-2">Detailed Breakdown</h4>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  See exactly where your budget goes with line-item details
+                </p>
+              </div>
             </div>
           </div>
         </div>
