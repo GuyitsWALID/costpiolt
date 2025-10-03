@@ -9,7 +9,7 @@ async function getStripe() {
     return new Stripe(process.env.STRIPE_SECRET_KEY!, {
       apiVersion: '2023-10-16',
     });
-  } catch (error) {
+  } catch (err) {
     console.error('Stripe package not found. Please install with: npm install stripe');
     throw new Error('Stripe not configured. Please install the stripe package.');
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { CreditCard, AlertCircle } from 'lucide-react';
 
 export default function StripeTestCard() {
   const [showTestInfo, setShowTestInfo] = useState(false);

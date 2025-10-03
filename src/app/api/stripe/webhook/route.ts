@@ -8,7 +8,7 @@ async function getStripe() {
     return new Stripe(process.env.STRIPE_SECRET_KEY!, {
       apiVersion: '2023-10-16',
     });
-  } catch (error) {
+  } catch (err) {
     console.error('Stripe package not found. Please install with: npm install stripe');
     throw new Error('Stripe not configured. Please install the stripe package.');
   }
@@ -34,12 +34,12 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('stripe-signature')!;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-    let event: any;
+    let event: import('stripe').Stripe.Event;
 
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (error) {
-      console.error('Webhook signature verification failed:', error);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -49,23 +49,23 @@ export async function POST(request: NextRequest) {
     // Handle the event
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutSessionCompleted(event.data.object, stripe);
+        await handleCheckoutSessionCompleted(event.data.object as import('stripe').Stripe.Checkout.Session, stripe);
         break;
       
       case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object);
+        await handleSubscriptionUpdated(event.data.object as import('stripe').Stripe.Subscription);
         break;
       
       case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object);
+        await handleSubscriptionDeleted(event.data.object as import('stripe').Stripe.Subscription);
         break;
       
       case 'invoice.payment_succeeded':
-        await handleInvoicePaymentSucceeded(event.data.object);
+        await handleInvoicePaymentSucceeded(event.data.object as import('stripe').Stripe.Invoice);
         break;
       
       case 'invoice.payment_failed':
-        await handleInvoicePaymentFailed(event.data.object);
+        await handleInvoicePaymentFailed(event.data.object as import('stripe').Stripe.Invoice);
         break;
       
       default:
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
+  } catch (err) {
+    console.error('Error processing webhook:', err);
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleCheckoutSessionCompleted(session: any, stripe: any) {
+async function handleCheckoutSessionCompleted(session: import('stripe').Stripe.Checkout.Session, stripe: import('stripe').Stripe) {
   const userId = session.metadata?.user_id;
   const planName = session.metadata?.plan_name;
   const planPrice = session.metadata?.plan_price;
@@ -112,7 +112,7 @@ async function handleCheckoutSessionCompleted(session: any, stripe: any) {
     });
 }
 
-async function handleSubscriptionUpdated(subscription: any) {
+async function handleSubscriptionUpdated(subscription: import('stripe').Stripe.Subscription) {
   await supabase
     .from('user_subscriptions')
     .update({
@@ -124,7 +124,7 @@ async function handleSubscriptionUpdated(subscription: any) {
     .eq('stripe_subscription_id', subscription.id);
 }
 
-async function handleSubscriptionDeleted(subscription: any) {
+async function handleSubscriptionDeleted(subscription: import('stripe').Stripe.Subscription) {
   await supabase
     .from('user_subscriptions')
     .update({
@@ -134,10 +134,10 @@ async function handleSubscriptionDeleted(subscription: any) {
     .eq('stripe_subscription_id', subscription.id);
 }
 
-async function handleInvoicePaymentSucceeded(invoice: any) {
+async function handleInvoicePaymentSucceeded(invoice: import('stripe').Stripe.Invoice) {
   console.log(`Payment succeeded for invoice ${invoice.id}`);
 }
 
-async function handleInvoicePaymentFailed(invoice: any) {
+async function handleInvoicePaymentFailed(invoice: import('stripe').Stripe.Invoice) {
   console.log(`Payment failed for invoice ${invoice.id}`);
 }

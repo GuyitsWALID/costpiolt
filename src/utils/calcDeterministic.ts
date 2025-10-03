@@ -3,7 +3,7 @@
  * Pure calculation function for transparent line-item budget computation
  */
 
-export interface TeamMember {
+ export interface TeamMember {
   role: string;
   hours: number;
   hourly_rate: number;
@@ -40,7 +40,7 @@ export interface BudgetLineItem {
   unit_type: string;
   source: string;
   confidence_score: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface DeterministicResult {
@@ -133,10 +133,8 @@ export function calcDeterministic(input: DeterministicInput): DeterministicResul
   }
 
   // 4. Team Costs
-  let totalTeamCost = 0;
   input.team.forEach((member, index) => {
     const memberTotalCost = member.hours * member.hourly_rate;
-    totalTeamCost += memberTotalCost;
 
     lineItems.push({
       category: 'team',
@@ -226,63 +224,80 @@ function createInputHash(input: DeterministicInput): string {
 /**
  * Validate input data
  */
-export function validateDeterministicInput(input: any): { isValid: boolean; errors: string[] } {
+export function validateDeterministicInput(input: unknown): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (typeof input.dataset_gb !== 'number' || input.dataset_gb < 0) {
+  if (!input || typeof input !== 'object') {
+    errors.push('Input must be an object');
+    return { isValid: false, errors };
+  }
+
+  const data = input as Record<string, unknown>;
+
+  if (typeof data.dataset_gb !== 'number' || data.dataset_gb < 0) {
     errors.push('dataset_gb must be a non-negative number');
   }
 
-  if (!['small', 'medium', 'large'].includes(input.model_size)) {
+  if (!['small', 'medium', 'large'].includes(data.model_size as string)) {
     errors.push('model_size must be one of: small, medium, large');
   }
 
-  if (typeof input.epochs_per_gb !== 'number' || input.epochs_per_gb <= 0) {
+  if (typeof data.epochs_per_gb !== 'number' || data.epochs_per_gb <= 0) {
     errors.push('epochs_per_gb must be a positive number');
   }
 
-  if (!Number.isInteger(input.label_count) || input.label_count < 0) {
+  if (!Number.isInteger(data.label_count) || (data.label_count as number) < 0) {
     errors.push('label_count must be a non-negative integer');
   }
 
-  if (!Number.isInteger(input.monthly_tokens) || input.monthly_tokens < 0) {
+  if (!Number.isInteger(data.monthly_tokens) || (data.monthly_tokens as number) < 0) {
     errors.push('monthly_tokens must be a non-negative integer');
   }
 
-  if (!Array.isArray(input.team)) {
+  if (!Array.isArray(data.team)) {
     errors.push('team must be an array');
   } else {
-    input.team.forEach((member: any, index: number) => {
-      if (typeof member.role !== 'string' || member.role.trim().length === 0) {
+    (data.team as unknown[]).forEach((member: unknown, index: number) => {
+      if (!member || typeof member !== 'object') {
+        errors.push(`team[${index}] must be an object`);
+        return;
+      }
+      
+      const teamMember = member as Record<string, unknown>;
+      
+      if (typeof teamMember.role !== 'string' || (teamMember.role as string).trim().length === 0) {
         errors.push(`team[${index}].role must be a non-empty string`);
       }
-      if (typeof member.hours !== 'number' || member.hours < 0) {
+      if (typeof teamMember.hours !== 'number' || teamMember.hours < 0) {
         errors.push(`team[${index}].hours must be a non-negative number`);
       }
-      if (typeof member.hourly_rate !== 'number' || member.hourly_rate < 0) {
+      if (typeof teamMember.hourly_rate !== 'number' || teamMember.hourly_rate < 0) {
         errors.push(`team[${index}].hourly_rate must be a non-negative number`);
       }
     });
   }
 
-  if (!input.price_map || typeof input.price_map !== 'object') {
+  if (!data.price_map || typeof data.price_map !== 'object') {
     errors.push('price_map is required and must be an object');
   } else {
-    if (!input.price_map.gpu_hours || typeof input.price_map.gpu_hours !== 'object') {
+    const priceMap = data.price_map as Record<string, unknown>;
+    
+    if (!priceMap.gpu_hours || typeof priceMap.gpu_hours !== 'object') {
       errors.push('price_map.gpu_hours is required and must be an object');
     } else {
+      const gpuHours = priceMap.gpu_hours as Record<string, unknown>;
       ['small', 'medium', 'large'].forEach(size => {
-        if (typeof input.price_map.gpu_hours[size] !== 'number' || input.price_map.gpu_hours[size] < 0) {
+        if (typeof gpuHours[size] !== 'number' || gpuHours[size] < 0) {
           errors.push(`price_map.gpu_hours.${size} must be a non-negative number`);
         }
       });
     }
 
-    if (typeof input.price_map.token_unit_cost !== 'number' || input.price_map.token_unit_cost < 0) {
+    if (typeof priceMap.token_unit_cost !== 'number' || priceMap.token_unit_cost < 0) {
       errors.push('price_map.token_unit_cost must be a non-negative number');
     }
 
-    if (typeof input.price_map.label_unit_cost !== 'number' || input.price_map.label_unit_cost < 0) {
+    if (typeof priceMap.label_unit_cost !== 'number' || priceMap.label_unit_cost < 0) {
       errors.push('price_map.label_unit_cost must be a non-negative number');
     }
   }
