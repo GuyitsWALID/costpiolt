@@ -96,7 +96,6 @@ export default function Home() {
             <ThemeToggle />
           </div>
         </nav>
-
       </header>
 
       {/* Hero Section */}
@@ -206,19 +205,16 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                // Actual Video Player (no poster/thumbnail)
+                // External video or placeholder
                 <div className="aspect-video">
-                  <video
+                  <iframe
                     className="w-full h-full rounded-xl md:rounded-2xl shadow-lg"
-                    controls
-                    autoPlay
-                    muted
-                    playsInline
-                  >
-                    <source src="/video/demovid.mp4" type="video/mp4" />
-                    <source src="/video/demovid.webm" type="video/webm" />
-                    Your browser does not support the video tag.
-                  </video>
+                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                    title="CostPilot Demo"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 </div>
               )}
             </div>
@@ -354,13 +350,14 @@ export default function Home() {
       {/* Pricing Section */}
       <section id="pricing" className="relative z-10 px-4 md:px-6 py-12 md:py-20">
         <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12 md:mb-16">
-              <div className="inline-block border-2 border-dashed border-black dark:border-white rounded-full px-6 py-3 bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-array font-bold text-foreground">
-                  Simple, Transparent Pricing
-                </h2>
-              </div>
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-block border-2 border-dashed border-black dark:border-white rounded-full px-6 py-3 bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-array font-bold text-foreground">
+                Simple, Transparent Pricing
+              </h2>
             </div>
+          </div>
+          
           <div className="text-center mb-12 md:mb-16">
             <p className="text-lg md:text-xl font-khand text-muted-foreground max-w-2xl mx-auto px-4">
               Choose the plan that fits your team&apos;s needs. All plans include our core AI-powered budget forecasting.
@@ -479,19 +476,19 @@ export default function Home() {
       <section className="relative z-10 px-4 md:px-6 py-12 md:py-20">
         <div className="max-w-4xl mx-auto text-center">
           <div className="bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:via-blue-800 dark:to-slate-800 border border-border p-6 md:p-12 rounded-2xl md:rounded-3xl">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-array font-bold text-card-foreground mb-4 md:mb-6">
-          Ready to Optimize Your AI Budget?
-        </h2>
-        <p className="text-lg md:text-xl font-khand text-muted-foreground mb-6 md:mb-8">
-          Join thousands of teams using CostPilot to make smarter AI investment decisions.
-        </p>
-        <Button asChild size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-khand">
-          <Link href="/auth" className="flex items-center justify-center space-x-2">
-            <Rocket className="h-4 w-4 md:h-5 md:w-5" />
-            <span>Start Free Trial</span>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-          </Link>
-        </Button>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-array font-bold text-card-foreground mb-4 md:mb-6">
+              Ready to Optimize Your AI Budget?
+            </h2>
+            <p className="text-lg md:text-xl font-khand text-muted-foreground mb-6 md:mb-8">
+              Join thousands of teams using CostPilot to make smarter AI investment decisions.
+            </p>
+            <Button asChild size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-khand">
+              <Link href="/auth" className="flex items-center justify-center space-x-2">
+                <Rocket className="h-4 w-4 md:h-5 md:w-5" />
+                <span>Start Free Trial</span>
+                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -516,3 +513,9 @@ export default function Home() {
     </div>
   );
 }
+         
+
+
+
+
+
