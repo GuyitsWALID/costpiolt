@@ -36,15 +36,6 @@ export default function Dashboard() {
 
       console.log('🔄 Fetching projects for user:', userToUse.email);
 
-      // Verify we have a valid session before making the request
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('Session invalid when fetching projects:', sessionError?.message);
-        router.push('/auth');
-        return;
-      }
-
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -75,19 +66,14 @@ export default function Dashboard() {
       
     } catch (error) {
       console.error('Error fetching projects:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch projects');
-      
-      // If it's an auth error, redirect to login
-      if (error instanceof Error && error.message.includes('JWT')) {
-        await supabase.auth.signOut();
-        router.push('/auth');
-      }
+      throw error; // Re-throw to be handled by caller
     }
   }, [router, user, selectedProjectId]);
 
   const checkUser = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
       
       // Get current session with proper error handling
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -99,7 +85,7 @@ export default function Dashboard() {
       }
 
       if (!session?.user) {
-        console.log('No active session found');
+        console.log('No active session found, redirecting to auth');
         router.push('/auth');
         return;
       }
@@ -108,10 +94,17 @@ export default function Dashboard() {
       setUser(session.user);
       
       // Fetch projects with proper error handling
-      await fetchProjects(session.user);
+      try {
+        await fetchProjects(session.user);
+      } catch (projectError) {
+        console.error('Error fetching projects:', projectError);
+        // Don't redirect on project fetch error, just show the error
+        setError(projectError instanceof Error ? projectError.message : 'Failed to load projects');
+      }
       
     } catch (error) {
       console.error('Error in checkUser:', error);
+      setError('Authentication failed');
       router.push('/auth');
     } finally {
       setLoading(false);
@@ -122,7 +115,7 @@ export default function Dashboard() {
     checkUser();
   }, [checkUser]);
 
-  // Listen for auth changes
+  // Listen for auth changes with better error handling
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email || 'No user');
@@ -130,13 +123,20 @@ export default function Dashboard() {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null);
         setProjects([]);
+        setLoading(false);
         router.push('/auth');
       } else if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
-        await fetchProjects(session.user);
+        try {
+          await fetchProjects(session.user);
+        } catch (error) {
+          console.error('Error fetching projects after sign in:', error);
+          setError('Failed to load projects');
+        }
+        setLoading(false);
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
         console.log('✅ Token refreshed successfully');
-        // Optionally refetch data after token refresh
+        setLoading(false);
       }
     });
 
@@ -183,12 +183,49 @@ export default function Dashboard() {
         <div className="text-center">
           <Calculator className="h-8 w-8 text-blue-500 animate-spin mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300">Loading dashboard...</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+            Please wait while we set up your workspace
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Authentication Error
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              {error}
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setError(null);
+                  router.push('/auth');
+                }}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Return to Sign In
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   if (!user) {
+    // This should redirect to auth, but show nothing while redirecting
     return null;
   }
 
