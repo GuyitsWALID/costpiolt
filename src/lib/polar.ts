@@ -34,4 +34,16 @@ export interface PolarProduct {
   };
   is_archived: boolean;
 }
+    
+export interface PolarProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: {
+    amount: number;
+    currency: string;
+    recurring_interval: 'month' | 'year';
+  };
+  is_archived: boolean;
+}
 

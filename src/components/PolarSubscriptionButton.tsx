@@ -86,7 +86,7 @@ export default function PolarSubscriptionButton({
     <div className="w-full space-y-2">
       <button
         onClick={handleSubscribe}
-        disabled={disabled || loading}
+        disabled={disabled || loading || planPrice === 0}
         className="w-full py-2 px-4 rounded-md font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors flex items-center justify-center space-x-2 min-h-[40px]"
       >
         {loading ? (
@@ -94,6 +94,8 @@ export default function PolarSubscriptionButton({
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>Processing...</span>
           </>
+        ) : planPrice === 0 ? (
+          <span>Free Plan</span>
         ) : (
           <>
             <span>Upgrade to {planName}</span>
@@ -118,3 +120,4 @@ export default function PolarSubscriptionButton({
     </div>
   );
 }
+ 

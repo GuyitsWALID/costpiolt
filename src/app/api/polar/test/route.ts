@@ -57,6 +57,7 @@ export async function GET() {
         specificProductType: typeof specificProduct
       }
     });
+
   } catch (error) {
     console.error('Polar API Error:', error);
     return NextResponse.json({

@@ -65,18 +65,17 @@ export async function POST(request: NextRequest) {
 
       // Find the appropriate price (you might want to filter by amount/currency)
       const price = product.prices.find(p => 
-        p.priceAmount === planPrice * 100 || // Changed from price_amount to priceAmount
+        p.priceAmount === planPrice * 100 || // Match by amount in cents
         product.prices.length === 1 // Or use the only available price
       ) || product.prices[0]; // Fallback to first price
 
-      console.log('✅ Using price:', price.id, 'Amount:', price.priceAmount); // Changed from price_amount to priceAmount
+      console.log('✅ Using price:', price.id, 'Amount:', price.priceAmount);
 
       // Create Polar checkout session with price ID
       const checkoutSession = await polar.checkouts.create({
         productPriceId: price.id, // Use the price ID from the product
         successUrl: `${request.nextUrl.origin}/settings?success=true&plan=${encodeURIComponent(planName)}`,
         customerEmail: user.email!,
-       
         
       });
 
