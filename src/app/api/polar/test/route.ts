@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { polar } from '@/lib/polar';
 
 export async function GET() {
   try {
@@ -10,60 +9,42 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    // Test if Polar connection works - get your specific organization
-    const organization = await polar.organizations.get({
-      id: '8546384c-1bb8-4d82-95c3-dce405a59057'
-    });
-    console.log('Organization response:', organization);
-
-    // Try to get products for your organization
-    let products;
+    // Try to import Polar dynamically
+    let polar;
     try {
-      products = await polar.products.list({
-        organizationId: '8546384c-1bb8-4d82-95c3-dce405a59057',
-        limit: 10
-      });
-      console.log('Products response:', products);
-    } catch (productError) {
-      console.error('Products error:', productError);
-      products = null;
+      const { polar: polarClient } = await import('@/lib/polar');
+      polar = polarClient;
+    } catch {
+      return NextResponse.json({
+        success: false,
+        error: 'Polar SDK not available',
+        details: 'This might be expected in build environments'
+      }, { status: 503 });
     }
 
-    // Try to get the specific product
-    let specificProduct;
+    // Test Polar connection
     try {
-      specificProduct = await polar.products.get({
-        id: '3bdd0f57-bac5-4190-8847-f48681c18e43'
+      const organization = await polar.organizations.get({
+        id: '8546384c-1bb8-4d82-95c3-dce405a59057'
       });
-      console.log('Specific product:', specificProduct);
-    } catch (productError) {
-      console.error('Specific product error:', productError);
-      specificProduct = null;
+
+      return NextResponse.json({
+        success: true,
+        message: 'Polar connection successful',
+        organization: organization ? { id: organization.id, name: organization.name } : null
+      });
+    } catch (polarError) {
+      return NextResponse.json({
+        success: false,
+        error: polarError instanceof Error ? polarError.message : 'Polar API error'
+      }, { status: 500 });
     }
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Polar connection successful',
-      organization: organization ? { id: organization.id, name: organization.name } : null,
-      productsAvailable: !!products,
-      specificProduct: specificProduct ? { 
-        id: specificProduct.id, 
-        name: specificProduct.name,
-        pricesCount: specificProduct.prices?.length || 0
-      } : null,
-      apiStructure: {
-        organizationType: typeof organization,
-        productsType: typeof products,
-        specificProductType: typeof specificProduct
-      }
-    });
 
   } catch (error) {
-    console.error('Polar API Error:', error);
+    console.error('Polar test error:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      details: 'Check console for full error details'
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

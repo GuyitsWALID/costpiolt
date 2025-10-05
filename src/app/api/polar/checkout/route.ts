@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { polar } from '@/lib/polar';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,11 +9,24 @@ export async function POST(request: NextRequest) {
       console.error('❌ Polar Access Token not found in environment variables');
       return NextResponse.json(
         { error: 'Payment system is not configured. Please contact support.' },
-        { status: 500 }
+        { status: 503 }
       );
     }
 
-    console.log('✅ Polar Access Token found, initializing checkout...');
+    // Try to import Polar dynamically
+    let polar;
+    try {
+      const { polar: polarClient } = await import('@/lib/polar');
+      polar = polarClient;
+    } catch (importError) {
+      console.error('❌ Failed to import Polar SDK:', importError);
+      return NextResponse.json(
+        { error: 'Payment system is temporarily unavailable. Please try again later.' },
+        { status: 503 }
+      );
+    }
+
+    console.log('✅ Polar client loaded, initializing checkout...');
     const supabase = createRouteHandlerClient({ cookies });
     
     // Get the authenticated user
@@ -63,8 +75,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Find the appropriate price (you might want to filter by amount/currency)
-      const price = product.prices.find(p => 
+      // Find the appropriate price with proper type annotation
+      interface PriceItem {
+        id: string;
+        priceAmount: number;
+      }
+      
+      const price = product.prices.find((p: PriceItem) => 
         p.priceAmount === planPrice * 100 || // Match by amount in cents
         product.prices.length === 1 // Or use the only available price
       ) || product.prices[0]; // Fallback to first price
@@ -73,14 +90,18 @@ export async function POST(request: NextRequest) {
 
       // Create Polar checkout session with price ID
       const checkoutSession = await polar.checkouts.create({
-        productPriceId: price.id, // Use the price ID from the product
+        productPriceId: price.id,
         successUrl: `${request.nextUrl.origin}/settings?success=true&plan=${encodeURIComponent(planName)}`,
         customerEmail: user.email!,
-        
+        metadata: {
+          user_id: user.id,
+          plan_name: planName,
+          plan_price: planPrice.toString(),
+          source: 'costpilot_app'
+        },
       });
 
       console.log('✅ Polar checkout session created:', checkoutSession.id);
-      console.log('✅ Checkout URL:', checkoutSession.url);
 
       return NextResponse.json({ 
         success: true,
@@ -91,8 +112,14 @@ export async function POST(request: NextRequest) {
     } catch (polarError) {
       console.error('❌ Polar API Error:', polarError);
       
-      // More specific error handling for common Polar issues
+      // Handle specific Polar errors
       if (polarError instanceof Error) {
+        if (polarError.message.includes('not available in this environment')) {
+          return NextResponse.json(
+            { error: 'Payment system is temporarily unavailable. Please try again later.' },
+            { status: 503 }
+          );
+        }
         if (polarError.message.includes('product not found')) {
           return NextResponse.json(
             { error: 'The selected subscription plan is no longer available.' },

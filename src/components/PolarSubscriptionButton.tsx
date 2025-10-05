@@ -46,6 +46,10 @@ export default function PolarSubscriptionButton({
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 503) {
+          throw new Error('Subscription service is temporarily unavailable. Please try again later.');
+        }
         throw new Error(data.error || `HTTP ${response.status}: Failed to create checkout`);
       }
 
@@ -120,4 +124,3 @@ export default function PolarSubscriptionButton({
     </div>
   );
 }
- 

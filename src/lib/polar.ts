@@ -1,9 +1,76 @@
-import { Polar } from '@polar-sh/sdk';
+interface PolarSDK {
+  checkouts: {
+    create: (request: {
+      productPriceId: string;
+      successUrl: string;
+      customerEmail?: string;
+      metadata?: Record<string, string>;
+    }) => Promise<{ id: string; url: string }>;
+  };
+  products: {
+    get: (params: { id: string }) => Promise<{
+      id: string;
+      name: string;
+      prices: Array<{ id: string; priceAmount: number }>;
+    }>;
+    list: (params: { organizationId?: string; limit?: number }) => Promise<unknown>;
+  };
+  organizations: {
+    get: (params: { id: string }) => Promise<{ id: string; name: string }>;
+    list: () => Promise<unknown>;
+  };
+}
 
-// Initialize Polar client with correct configuration
-export const polar = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN || '',
-});
+// Initialize with mock first, then try to load real SDK
+let polar: PolarSDK = {
+  checkouts: {
+    create: async () => {
+      throw new Error('Polar integration is not available in this environment');
+    }
+  },
+  products: {
+    get: async () => {
+      throw new Error('Polar integration is not available in this environment');
+    },
+    list: async () => {
+      throw new Error('Polar integration is not available in this environment');
+    }
+  },
+  organizations: {
+    get: async () => {
+      throw new Error('Polar integration is not available in this environment');
+    },
+    list: async () => {
+      throw new Error('Polar integration is not available in this environment');
+    }
+  }
+};
+
+// Try to load the real Polar SDK
+if (typeof window === 'undefined') {
+  // Server-side - use dynamic import
+  try {
+    import('@polar-sh/sdk').then(PolarModule => {
+      const PolarClass = PolarModule.Polar;
+      
+      // Initialize Polar client with correct configuration
+      const realPolar = new PolarClass({
+        accessToken: process.env.POLAR_ACCESS_TOKEN || '',
+      });
+      
+      // Cast to our interface (the real SDK should be compatible)
+      polar = realPolar as unknown as PolarSDK;
+    }).catch(() => {
+      // Keep mock implementation
+      console.warn('Failed to load Polar SDK, using mock implementation');
+    });
+  } catch {
+    // Keep mock implementation
+    console.warn('Polar SDK not available, using mock implementation');
+  }
+}
+
+export { polar };
 
 // Types for Polar integration
 export interface PolarSubscription {
@@ -34,7 +101,7 @@ export interface PolarProduct {
   };
   is_archived: boolean;
 }
-    
+
 export interface PolarProduct {
   id: string;
   name: string;
