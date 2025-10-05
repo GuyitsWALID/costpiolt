@@ -9,7 +9,6 @@ import {
   Settings, 
   User as UserIcon, 
   LogOut,
-  CreditCard,
   Menu,
   X
 } from 'lucide-react';
@@ -107,7 +106,7 @@ export default function Sidebar({
             }`}
             title="Budget Tool"
           >
-            <CreditCard className={`${isCollapsed ? 'h-5 w-5' : 'h-4 w-4'}`} />
+            <BarChart3 className={`${isCollapsed ? 'h-5 w-5' : 'h-4 w-4'}`} />
             {!isCollapsed && <span>Budget Tool</span>}
           </button>
         </nav>

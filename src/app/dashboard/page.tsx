@@ -6,12 +6,12 @@ import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import type { Project } from '@/lib/supabaseClient';
 import Sidebar from '@/components/Sidebar';
-import BudgetTool from '@/components/BudgetTool';
 import SettingsPage from '@/components/SettingsPage';
 import ProjectCreateDialog from '@/components/ProjectCreateDialog';
 import { MaterialThemeProvider } from '@/components/MaterialThemeProvider';
 import { Calculator, Sun, Moon, Plus } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
+import BudgetTool from '@/components/BudgetTool';
 
 type ViewType = 'projects' | 'budget' | 'settings';
 
@@ -23,58 +23,130 @@ export default function Dashboard() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('projects');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
-  const checkUser = useCallback(async () => {
+  const fetchProjects = useCallback(async (currentUser?: User) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const userToUse = currentUser || user;
+      if (!userToUse) {
+        throw new Error('No authenticated user found');
+      }
+
+      console.log('🔄 Fetching projects for user:', userToUse.email);
+
+      // Verify we have a valid session before making the request
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (!session?.user) {
+      if (sessionError || !session) {
+        console.error('Session invalid when fetching projects:', sessionError?.message);
         router.push('/auth');
         return;
       }
+
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', userToUse.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase error fetching projects:', error);
+        
+        // Handle specific auth errors
+        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
+          console.log('Authentication expired, redirecting to login');
+          await supabase.auth.signOut();
+          router.push('/auth');
+          return;
+        }
+        
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      console.log('✅ Projects fetched successfully:', data?.length || 0);
+      setProjects(data || []);
       
-      setUser(session.user);
-      await fetchProjects(session.access_token);
+      // Auto-select first project if none selected
+      if (data && data.length > 0 && !selectedProjectId) {
+        setSelectedProjectId(data[0].id);
+      }
+      
     } catch (error) {
-      console.error('Error checking user:', error);
+      console.error('Error fetching projects:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch projects');
+      
+      // If it's an auth error, redirect to login
+      if (error instanceof Error && error.message.includes('JWT')) {
+        await supabase.auth.signOut();
+        router.push('/auth');
+      }
+    }
+  }, [router, user, selectedProjectId]);
+
+  const checkUser = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Get current session with proper error handling
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        router.push('/auth');
+        return;
+      }
+
+      if (!session?.user) {
+        console.log('No active session found');
+        router.push('/auth');
+        return;
+      }
+
+      console.log('✅ User authenticated:', session.user.email);
+      setUser(session.user);
+      
+      // Fetch projects with proper error handling
+      await fetchProjects(session.user);
+      
+    } catch (error) {
+      console.error('Error in checkUser:', error);
       router.push('/auth');
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, fetchProjects]);
 
   useEffect(() => {
     checkUser();
   }, [checkUser]);
 
-  const fetchProjects = async (accessToken: string) => {
-    try {
-      const response = await fetch('/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects');
+  // Listen for auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email || 'No user');
+      
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null);
+        setProjects([]);
+        router.push('/auth');
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
+        await fetchProjects(session.user);
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        console.log('✅ Token refreshed successfully');
+        // Optionally refetch data after token refresh
       }
+    });
 
-      const data = await response.json();
-      if (data.success) {
-        setProjects(data.projects);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  };
+    return () => subscription.unsubscribe();
+  }, [router, fetchProjects]);
 
   const handleProjectCreated = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      await fetchProjects(session.access_token);
+    if (session?.user) {
+      await fetchProjects(session.user); // Pass the user object, not access_token
     }
     setShowCreateForm(false);
   };
@@ -297,6 +369,49 @@ export default function Dashboard() {
         );
     }
   };
+
+  // Enhanced error display
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Something went wrong
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              {error}
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setError(null);
+                  checkUser();
+                }}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push('/auth');
+                }}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Sign Out & Return to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">

@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from 'date-fns';
 import { FileText, ChevronRight } from 'lucide-react';
 import type { Project } from '@/lib/supabaseClient';
 
@@ -63,7 +62,10 @@ export default function ProjectList({
                     </span>
                   )}
                   <span className={`${isSelected ? 'text-blue-100' : 'text-gray-600 dark:text-slate-400'}`}>
-                    {format(new Date(project.created_at), 'MMM d')}
+                    {new Date(project.created_at).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
                   </span>
                 </div>
               </div>
