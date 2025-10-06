@@ -8,15 +8,9 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = createRouteHandlerClient({ cookies })
-
-    try {
-      await supabase.auth.exchangeCodeForSession(code)
-    } catch (error) {
-      console.error('Error exchanging code for session:', error)
-      return NextResponse.redirect(new URL('/auth?error=callback_error', request.url))
-    }
+    await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // URL to redirect to after sign in process completes
+  // Redirect to dashboard after successful auth
   return NextResponse.redirect(new URL('/dashboard', request.url))
 }

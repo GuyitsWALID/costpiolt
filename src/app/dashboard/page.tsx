@@ -27,126 +27,82 @@ export default function Dashboard() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
-  const fetchProjects = useCallback(async (currentUser?: User) => {
+  const fetchProjects = useCallback(async (currentUser: User) => {
     try {
-      const userToUse = currentUser || user;
-      if (!userToUse) {
-        throw new Error('No authenticated user found');
-      }
-
-      console.log('🔄 Fetching projects for user:', userToUse.email);
+      console.log('🔄 Fetching projects for user:', currentUser.email);
 
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('user_id', userToUse.id)
+        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error fetching projects:', error);
-        
-        // Handle specific auth errors
-        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
-          console.log('Authentication expired, redirecting to login');
-          await supabase.auth.signOut();
-          router.push('/auth');
-          return;
-        }
-        
-        throw new Error(`Database error: ${error.message}`);
+        console.log('Projects query error:', error);
+        // Don't throw error for empty results or minor issues
+        setProjects([]);
+        return;
       }
 
       console.log('✅ Projects fetched successfully:', data?.length || 0);
       setProjects(data || []);
       
-      // Auto-select first project if none selected
       if (data && data.length > 0 && !selectedProjectId) {
         setSelectedProjectId(data[0].id);
       }
       
     } catch (error) {
-      console.error('Error fetching projects:', error);
-      throw error; // Re-throw to be handled by caller
+      console.log('Error fetching projects:', error);
+      setProjects([]); // Set empty array instead of throwing
     }
-  }, [router, user, selectedProjectId]);
+  }, [selectedProjectId]);
 
-  const checkUser = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null); // Clear any previous errors
-      
-      // Get current session with proper error handling
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        router.push('/auth');
-        return;
-      }
+  useEffect(() => {
+    let mounted = true;
 
-      if (!session?.user) {
-        console.log('No active session found, redirecting to auth');
-        router.push('/auth');
-        return;
-      }
-
-      console.log('✅ User authenticated:', session.user.email);
-      setUser(session.user);
-      
-      // Fetch projects with proper error handling
+    const initializeAuth = async () => {
       try {
-        await fetchProjects(session.user);
-      } catch (projectError) {
-        console.error('Error fetching projects:', projectError);
-        // Don't redirect on project fetch error, just show the error
-        setError(projectError instanceof Error ? projectError.message : 'Failed to load projects');
-      }
-      
-    } catch (error) {
-      console.error('Error in checkUser:', error);
-      setError('Authentication failed');
-      router.push('/auth');
-    } finally {
-      setLoading(false);
-    }
-  }, [router, fetchProjects]);
-
-  useEffect(() => {
-    checkUser();
-  }, [checkUser]);
-
-  // Listen for auth changes with better error handling
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email || 'No user');
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        setUser(null);
-        setProjects([]);
-        setLoading(false);
-        router.push('/auth');
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-        try {
-          await fetchProjects(session.user);
-        } catch (error) {
-          console.error('Error fetching projects after sign in:', error);
-          setError('Failed to load projects');
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          router.push('/auth');
+          return;
         }
-        setLoading(false);
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        console.log('✅ Token refreshed successfully');
+
+        if (mounted) {
+          setUser(session.user);
+          await fetchProjects(session.user);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.log('Auth initialization error:', error);
+        router.push('/auth');
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        router.push('/auth');
+      } else if (event === 'SIGNED_IN' && session?.user && mounted) {
+        setUser(session.user);
+        await fetchProjects(session.user);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [router, fetchProjects]);
 
   const handleProjectCreated = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await fetchProjects(session.user); // Pass the user object, not access_token
+    if (user) {
+      await fetchProjects(user);
     }
     setShowCreateForm(false);
   };
@@ -177,55 +133,20 @@ export default function Dashboard() {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  // Simple loading screen
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <Calculator className="h-8 w-8 text-blue-500 animate-spin mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300">Loading dashboard...</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-            Please wait while we set up your workspace
-          </p>
         </div>
       </div>
     );
   }
 
-  if (error && !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <div className="text-center">
-            <div className="text-red-500 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Authentication Error
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {error}
-            </p>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  setError(null);
-                  router.push('/auth');
-                }}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Return to Sign In
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Don't show anything if no user (will redirect)
   if (!user) {
-    // This should redirect to auth, but show nothing while redirecting
     return null;
   }
 
@@ -428,7 +349,7 @@ export default function Dashboard() {
               <button
                 onClick={() => {
                   setError(null);
-                  checkUser();
+                  
                 }}
                 className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
