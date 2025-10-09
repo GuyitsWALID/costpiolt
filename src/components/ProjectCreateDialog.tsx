@@ -39,7 +39,8 @@ interface CostEstimation {
 interface ProjectCreateDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: (projectId: string) => void;
+  onSuccess: (projectId: string) => void;
+  projectCount?: number; // Add this prop
 }
 
 // Schema-matching constants
@@ -77,7 +78,12 @@ const LABELING_SERVICES = [
   { value: 'toloka', label: 'Toloka' }
 ];
 
-export default function ProjectCreateDialog({ open, onClose, onSuccess }: ProjectCreateDialogProps) {
+export default function ProjectCreateDialog({ 
+  open, 
+  onClose, 
+  onSuccess,
+  projectCount = 0 
+}: ProjectCreateDialogProps) {
   // Form state - exactly matching database schema
   const [projectForm, setProjectForm] = useState({
     name: '',
@@ -186,6 +192,18 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Check project limit before creating
+    if (projectCount >= 2) {
+      setFormErrors({ submit: 'You have reached the limit of 2 projects on the free tier. Please upgrade to Pro to create more projects.' });
+      return;
+    }
+
+    handleProjectSubmit();
   };
 
   const handleDialogClose = useCallback(() => {
@@ -469,7 +487,7 @@ export default function ProjectCreateDialog({ open, onClose, onSuccess }: Projec
           Cancel
         </Button>
         <Button 
-          onClick={handleProjectSubmit}
+          onClick={handleSubmit}
           variant="contained"
           disabled={submitting}
           startIcon={submitting ? <CircularProgress size={20} /> : <AddIcon />}

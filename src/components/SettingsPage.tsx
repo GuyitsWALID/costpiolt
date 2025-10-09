@@ -225,27 +225,27 @@ export default function SettingsPage({ user }: SettingsProps) {
   ];
 
   return (
-    <div className="flex-1 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center space-x-3 mb-2">
-            <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+            <Settings className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-300">Manage your account settings and preferences</p>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Manage your account settings and preferences</p>
         </div>
 
-        {/* Checkout Status Messages */}
+        {/* Checkout Status Messages - Same as before but responsive */}
         {checkoutStatus === 'success' && (
           <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="flex items-start space-x-3">
+              <Check className="h-5 w-5 md:h-6 md:w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
               <div>
                 <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
                   Subscription Successful!
                 </h3>
-                <p className="text-sm text-green-700 dark:text-green-300">
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
                   Thank you for subscribing! Your account will be updated shortly. This page will refresh automatically.
                 </p>
               </div>
@@ -255,13 +255,13 @@ export default function SettingsPage({ user }: SettingsProps) {
 
         {checkoutStatus === 'canceled' && (
           <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <X className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+            <div className="flex items-start space-x-3">
+              <X className="h-5 w-5 md:h-6 md:w-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
               <div>
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                   Checkout Canceled
                 </h3>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                   No worries! You can upgrade anytime. Your current plan remains active.
                 </p>
               </div>
@@ -273,28 +273,28 @@ export default function SettingsPage({ user }: SettingsProps) {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600 dark:text-gray-300">Loading settings...</span>
+            <span className="ml-3 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading settings...</span>
           </div>
         ) : (
           <>
-            {/* Tabs */}
+            {/* Tabs - Mobile responsive with scrolling */}
             <div className="mb-6">
               <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="-mb-px flex space-x-8">
+                <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto pb-2">
                   {tabs.map((tab) => {
                     const Icon = tab.icon;
                     return (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as 'profile' | 'subscription' | 'notifications' | 'security')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
                           activeTab === tab.id
                             ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span>{tab.label}</span>
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">{tab.label}</span>
                       </button>
                     );
                   })}
@@ -305,13 +305,13 @@ export default function SettingsPage({ user }: SettingsProps) {
             {/* Tab Content */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               {activeTab === 'profile' && (
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Profile Information</h2>
+                <div className="p-4 md:p-6">
+                  <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
+                    <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">Profile Information</h2>
                     {!isEditingProfile && (
                       <button
                         onClick={() => setIsEditingProfile(true)}
-                        className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                        className="flex items-center justify-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors w-full md:w-auto"
                       >
                         <Edit className="h-4 w-4" />
                         <span>Edit</span>
@@ -321,19 +321,19 @@ export default function SettingsPage({ user }: SettingsProps) {
 
                   <div className="space-y-6">
                     {/* Avatar and Email */}
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-center space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
                       <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
                         <User className="h-8 w-8 text-white" />
                       </div>
-                      <div>
+                      <div className="text-center md:text-left">
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">{userProfile.full_name || 'User'}</h3>
-                        <p className="text-gray-600 dark:text-gray-300">{user.email}</p>
+                        <p className="text-gray-600 dark:text-gray-300 break-all md:break-normal">{user.email}</p>
                       </div>
                     </div>
 
                     {/* Profile Form */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
                         <input
                           type="text"
@@ -366,13 +366,13 @@ export default function SettingsPage({ user }: SettingsProps) {
                         />
                       </div>
 
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                         <input
                           type="email"
                           value={user.email}
                           disabled
-                          className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                          className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 break-all md:break-normal"
                         />
                       </div>
 
@@ -391,11 +391,11 @@ export default function SettingsPage({ user }: SettingsProps) {
 
                     {/* Action Buttons */}
                     {isEditingProfile && (
-                      <div className="flex items-center space-x-3">
+                      <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-3">
                         <button
                           onClick={handleProfileSave}
                           disabled={saving}
-                          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                          className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors w-full md:w-auto"
                         >
                           {saving ? (
                             <>
@@ -411,7 +411,7 @@ export default function SettingsPage({ user }: SettingsProps) {
                         </button>
                         <button
                           onClick={() => setIsEditingProfile(false)}
-                          className="flex items-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          className="flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors w-full md:w-auto"
                         >
                           <X className="h-4 w-4" />
                           <span>Cancel</span>
@@ -423,21 +423,21 @@ export default function SettingsPage({ user }: SettingsProps) {
               )}
 
               {activeTab === 'subscription' && (
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Subscription & Billing</h2>
+                <div className="p-4 md:p-6">
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-6">Subscription & Billing</h2>
 
                   {/* Current Plan */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Current Plan</h3>
+                  <div className="mb-6 md:mb-8">
+                    <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white mb-4">Current Plan</h3>
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Crown className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+                        <div className="flex items-start space-x-3">
+                          <Crown className="h-5 w-5 md:h-6 md:w-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                           <div>
-                            <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+                            <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm md:text-base">
                               {subscriptionPlans.find(plan => plan.current)?.name || 'Free'} Plan
                             </h4>
-                            <p className="text-blue-700 dark:text-blue-300">
+                            <p className="text-blue-700 dark:text-blue-300 text-sm">
                               ${subscriptionPlans.find(plan => plan.current)?.price || 0}/{subscriptionPlans.find(plan => plan.current)?.interval} • 
                               {subscriptionPlans.find(plan => plan.current)?.features.length} features
                             </p>
@@ -448,9 +448,9 @@ export default function SettingsPage({ user }: SettingsProps) {
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left md:text-right">
                           <p className="text-sm text-blue-600 dark:text-blue-400">Next billing date</p>
-                          <p className="font-medium text-blue-900 dark:text-blue-100">
+                          <p className="font-medium text-blue-900 dark:text-blue-100 text-sm md:text-base">
                             {userSubscription 
                               ? new Date(userSubscription.current_period_end).toLocaleDateString()
                               : 'N/A (Free Plan)'
@@ -462,13 +462,13 @@ export default function SettingsPage({ user }: SettingsProps) {
                   </div>
 
                   {/* Available Plans */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Available Plans</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="mb-6 md:mb-8">
+                    <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white mb-4">Available Plans</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                       {subscriptionPlans.map((plan) => (
                         <div
                           key={plan.id}
-                          className={`border rounded-lg p-6 relative transition-all hover:shadow-lg ${
+                          className={`border rounded-lg p-4 md:p-6 relative transition-all hover:shadow-lg ${
                             plan.current 
                               ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800 shadow-md' 
                               : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
@@ -483,28 +483,22 @@ export default function SettingsPage({ user }: SettingsProps) {
                           )}
                           
                           <div className="text-center mb-4">
-                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{plan.name}</h4>
+                            <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">{plan.name}</h4>
                             <div className="mt-2">
-                              <span className="text-3xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
-                              <span className="text-gray-600 dark:text-gray-400">/{plan.interval}</span>
+                              <span className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
+                              <span className="text-gray-600 dark:text-gray-400 text-sm md:text-base">/{plan.interval}</span>
                             </div>
                           </div>
 
                           <ul className="space-y-2 mb-6">
                             {plan.features.map((feature, index) => (
-                              <li key={index} className="flex items-center space-x-2">
-                                <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                <span className="text-sm text-gray-600 dark:text-gray-300">{feature}</span>
+                              <li key={index} className="flex items-start space-x-2">
+                                <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                                <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{feature}</span>
                               </li>
                             ))}
                           </ul>
 
-                          <button
-                            disabled={plan.price === 0}
-                            className="w-full py-2 px-4 rounded-md font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors"
-                          >
-                            {plan.current ? 'Current Plan' : `Upgrade to ${plan.name}`}
-                          </button>
                           <PolarSubscriptionButton
                             productId={plan.productId}
                             planName={plan.name}
@@ -519,9 +513,9 @@ export default function SettingsPage({ user }: SettingsProps) {
 
                   {/* Billing Information */}
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Billing Information</h3>
+                    <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white mb-4">Billing Information</h3>
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col space-y-3 md:flex-row md:items-center md:justify-between md:space-y-0">
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-300">
                             All payments are processed securely through Polar
@@ -530,7 +524,7 @@ export default function SettingsPage({ user }: SettingsProps) {
                             You can cancel or modify your subscription at any time
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="flex justify-center md:justify-end">
                           <Image 
                             src="https://polar.sh/assets/brand/polar-logo.svg" 
                             alt="Powered by Polar" 
@@ -545,95 +539,67 @@ export default function SettingsPage({ user }: SettingsProps) {
                 </div>
               )}
 
+              {/* Other tabs remain similar with responsive adjustments */}
               {activeTab === 'notifications' && (
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Notification Preferences</h2>
+                <div className="p-4 md:p-6">
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-6">Notification Preferences</h2>
 
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white">Email Updates</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Receive email notifications about your account activity</p>
+                    {Object.entries({
+                      email_updates: {
+                        title: 'Email Updates',
+                        description: 'Receive email notifications about your account activity'
+                      },
+                      project_alerts: {
+                        title: 'Project Alerts',
+                        description: 'Get notified when projects exceed budget thresholds'
+                      },
+                      budget_reminders: {
+                        title: 'Budget Reminders',
+                        description: 'Weekly reminders to update your budget tracking'
+                      },
+                      marketing: {
+                        title: 'Marketing Communications',
+                        description: 'Receive updates about new features and promotions'
+                      }
+                    }).map(([key, config]) => (
+                      <div key={key} className="flex flex-col space-y-3 md:flex-row md:items-center md:justify-between md:space-y-0">
+                        <div className="flex-1">
+                          <h3 className="text-base font-medium text-gray-900 dark:text-white">{config.title}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{config.description}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={notifications[key as keyof typeof notifications]}
+                            onChange={(e) => handleNotificationUpdate(key, e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.email_updates}
-                          onChange={(e) => handleNotificationUpdate('email_updates', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white">Project Alerts</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Get notified when projects exceed budget thresholds</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.project_alerts}
-                          onChange={(e) => handleNotificationUpdate('project_alerts', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white">Budget Reminders</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Weekly reminders to update your budget tracking</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.budget_reminders}
-                          onChange={(e) => handleNotificationUpdate('budget_reminders', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white">Marketing Communications</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Receive updates about new features and promotions</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.marketing}
-                          onChange={(e) => handleNotificationUpdate('marketing', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {activeTab === 'security' && (
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Security Settings</h2>
+                <div className="p-4 md:p-6">
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-6">Security Settings</h2>
 
-                  <div className="space-y-8">
+                  <div className="space-y-6 md:space-y-8">
                     {/* Password Section */}
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Password</h3>
+                      <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white mb-4">Password</h3>
                       <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
                           <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">Password</p>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Last updated: Never</p>
                           </div>
                           <button
                             onClick={handlePasswordReset}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors w-full md:w-auto"
                           >
                             Reset Password
                           </button>
@@ -643,21 +609,21 @@ export default function SettingsPage({ user }: SettingsProps) {
 
                     {/* Account Info */}
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Information</h3>
+                      <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white mb-4">Account Information</h3>
                       <div className="space-y-3">
-                        <div className="flex justify-between py-2">
+                        <div className="flex flex-col space-y-1 md:flex-row md:justify-between md:space-y-0 py-2">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Account created</span>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
                             {new Date(user.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <div className="flex justify-between py-2">
+                        <div className="flex flex-col space-y-1 md:flex-row md:justify-between md:space-y-0 py-2">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Last sign in</span>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
                             {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
                           </span>
                         </div>
-                        <div className="flex justify-between py-2">
+                        <div className="flex flex-col space-y-1 md:flex-row md:justify-between md:space-y-0 py-2">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Email verified</span>
                           <span className={`text-sm font-medium ${user.email_confirmed_at ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {user.email_confirmed_at ? 'Yes' : 'No'}
@@ -668,17 +634,17 @@ export default function SettingsPage({ user }: SettingsProps) {
 
                     {/* Danger Zone */}
                     <div>
-                      <h3 className="text-lg font-medium text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
+                      <h3 className="text-base md:text-lg font-medium text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
                       <div className="border border-red-200 dark:border-red-800 rounded-lg p-4 bg-red-50 dark:bg-red-900/20">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
                           <div>
                             <p className="text-sm font-medium text-red-900 dark:text-red-100">Delete Account</p>
-                            <p className="text-sm text-red-700 dark:text-red-300">
+                            <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed">
                               Permanently delete your account and all associated data. This action cannot be undone.
                             </p>
                           </div>
                           <button
-                            className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                            className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors w-full md:w-auto"
                             onClick={() => alert('Account deletion would be implemented here')}
                           >
                             Delete Account

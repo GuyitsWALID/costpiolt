@@ -102,15 +102,45 @@ export interface PolarProduct {
   is_archived: boolean;
 }
 
-export interface PolarProduct {
-  id: string;
-  name: string;
-  description: string;
-  price: {
-    amount: number;
-    currency: string;
-    recurring_interval: 'month' | 'year';
-  };
-  is_archived: boolean;
-}
+export const POLAR_CONFIG = {
+  organizationName: 'costpilot',
+  baseCheckoutUrl: 'https://polar.sh/checkout/costpilot',
+  plans: {
+    pro: {
+      id: 'pro-plan',
+      name: 'Pro Plan',
+      price: 29,
+      checkoutUrl: 'https://polar.sh/checkout/costpilot/pro-plan'
+    },
+    enterprise: {
+      id: 'enterprise-plan', 
+      name: 'Enterprise Plan',
+      price: 99,
+      checkoutUrl: 'https://polar.sh/checkout/costpilot/enterprise-plan'
+    }
+  },
+  // Environment variables for production
+  organizationId: process.env.NEXT_PUBLIC_POLAR_ORGANIZATION_ID || '',
+  webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
+};
+
+export const redirectToPolarCheckout = (planType: 'pro' | 'enterprise', userId?: string) => {
+  const plan = POLAR_CONFIG.plans[planType];
+  const params = new URLSearchParams({
+    ...(userId && { customer_id: userId }),
+  });
+  
+  const checkoutUrl = `${plan.checkoutUrl}${params.toString() ? '?' + params.toString() : ''}`;
+  window.open(checkoutUrl, '_blank');
+};
+
+export const getPlanByProductId = (productId: string) => {
+  return Object.values(POLAR_CONFIG.plans).find(plan => plan.id === productId);
+};
+
+export const isPolarWebhookValid = (signature: string, payload: string, secret: string): boolean => {
+  // Implement Polar webhook signature validation
+  // This will depend on Polar's webhook signing method
+  return true; // Placeholder - implement based on Polar's documentation
+};
 

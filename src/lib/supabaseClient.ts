@@ -80,3 +80,84 @@ export const fetchUserProjects = async (userId: string, retries = 2): Promise<Pr
     throw error;
   }
 };
+
+export interface ProjectEstimation {
+  id: string;
+  project_id: string;
+  user_id: string;
+  estimation_name: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  
+  // Training costs
+  training_cost: number;
+  training_duration_hours: number;
+  training_gpu_type: string;
+  training_gpu_count: number;
+  training_cloud_provider: string;
+  
+  // Fine-tuning costs
+  fine_tuning_cost: number;
+  fine_tuning_duration_hours: number;
+  fine_tuning_iterations: number;
+  
+  // Inference costs
+  inference_cost_monthly: number;
+  inference_requests_monthly: number;
+  inference_cost_per_request: number;
+  
+  // Team costs
+  team_size: number;
+  team_monthly_cost: number;
+  project_duration_months: number;
+  
+  // Infrastructure costs
+  storage_cost_monthly: number;
+  bandwidth_cost_monthly: number;
+  monitoring_cost_monthly: number;
+  
+  // Total costs
+  total_development_cost: number;
+  total_monthly_operational_cost: number;
+  total_yearly_cost: number;
+  
+  // AI analysis
+  ai_recommendations: string;
+  cost_breakdown: any;
+  risk_factors: any;
+  optimization_suggestions: any;
+}
+
+export interface ProjectGoal {
+  id: string;
+  project_id: string;
+  user_id: string;
+  goal_title: string;
+  goal_description: string;
+  goal_type: 'cost_reduction' | 'performance' | 'timeline' | 'quality';
+  target_value: number;
+  current_value: number;
+  unit: string;
+  start_date: string;
+  target_date: string;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  progress_percentage: number;
+  ai_suggestions: any;
+  ai_milestones: any;
+  is_tracking_started: boolean;
+  last_updated: string;
+  created_at: string;
+}
+
+export interface GoalProgress {
+  id: string;
+  goal_id: string;
+  recorded_value: number;
+  progress_note: string;
+  recorded_by: string;
+  recorded_at: string;
+  milestone_achieved: string;
+  is_milestone: boolean;
+  data_source: 'manual' | 'automated' | 'ai_calculated';
+}
