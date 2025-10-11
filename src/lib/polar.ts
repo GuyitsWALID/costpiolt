@@ -138,7 +138,7 @@ export const getPlanByProductId = (productId: string) => {
   return Object.values(POLAR_CONFIG.plans).find(plan => plan.id === productId);
 };
 
-export const isPolarWebhookValid = (signature: string, payload: string, secret: string): boolean => {
+export const isPolarWebhookValid = (_signature: string, _payload: string, _secret: string): boolean => {
   // Implement Polar webhook signature validation
   // This will depend on Polar's webhook signing method
   return true; // Placeholder - implement based on Polar's documentation

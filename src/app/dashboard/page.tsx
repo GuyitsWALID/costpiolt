@@ -20,7 +20,6 @@ import {
   Grid3X3, 
   List, 
   Download, 
-  MoreHorizontal, 
   ChevronDown,
   Trash2,
   ExternalLink,
@@ -276,8 +275,6 @@ export default function Dashboard() {
   if (!user) {
     return null;
   }
-
-  const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   const renderMainContent = () => {
     switch (currentView) {
@@ -578,12 +575,6 @@ export default function Dashboard() {
           </div>
         );
     }
-  };
-
-  const handleUpgrade = () => {
-    // Use the same Polar checkout URL as in billing settings
-    // This should match the Pro plan product ID from your billing page
-    window.open('https://polar.sh/checkout/costpilot/pro-plan', '_blank');
   };
 
   // Enhanced error display
@@ -1011,7 +1002,7 @@ export default function Dashboard() {
                     Upgrade to Unlock More
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-                    You've reached the limit of 2 projects on the free tier. Choose a plan that fits your needs and unlock unlimited potential.
+                    You&apos;ve reached the limit of 2 projects on the free tier. Choose a plan that fits your needs and unlock unlimited potential.
                   </p>
                 </div>
 
