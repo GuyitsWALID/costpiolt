@@ -285,7 +285,7 @@ export default function Sidebar({
 										Upgrade to Unlock More
 									</h3>
 									<p className="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto px-4">
-										You've reached the limit of 2 projects on the free tier. Choose a plan that fits your needs and unlock unlimited potential.
+										You have reached the limit of 2 projects on the free tier. Choose a plan that fits your needs and unlock unlimited potential.
 									</p>
 								</div>
 

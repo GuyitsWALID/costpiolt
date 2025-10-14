@@ -1,4 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import type { 
+  PostgrestError,
+  AuthError
+} from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -31,6 +35,59 @@ export interface CreateProjectRequest {
   dataset_gb: number
   label_count: number
   monthly_tokens: number
+}
+
+// Type for AI-related fields - updated to match aiEstimationService
+export interface CostBreakdown {
+  training: {
+    gpuHours: number;
+    costPerHour: number;
+    totalCost: number;
+    description: string;
+  };
+  fineTuning: {
+    iterations: number;
+    costPerIteration: number;
+    totalCost: number;
+    description: string;
+  };
+  inference: {
+    monthlyRequests: number;
+    costPerRequest: number;
+    monthlyCost: number;
+    description: string;
+  };
+  team: {
+    teamSize: number;
+    avgSalary: number;
+    duration: number;
+    totalCost: number;
+    description: string;
+  };
+  infrastructure: {
+    storage: number;
+    bandwidth: number;
+    monitoring: number;
+    description: string;
+  };
+}
+
+export interface RiskFactor {
+  type: string;
+  severity?: 'low' | 'medium' | 'high';
+  description: string;
+  impact?: string;
+  mitigation?: string;
+}
+
+export interface OptimizationSuggestion {
+  category?: string;
+  type?: string;
+  suggestion: string;
+  potential_savings?: number;
+  time_savings?: string;
+  description?: string;
+  implementation_effort?: 'low' | 'medium' | 'high';
 }
 
 // Enhanced error handling for auth
@@ -122,11 +179,24 @@ export interface ProjectEstimation {
   total_monthly_operational_cost: number;
   total_yearly_cost: number;
   
-  // AI analysis
+  // AI analysis - now with proper types matching the service
   ai_recommendations: string;
-  cost_breakdown: any;
-  risk_factors: any;
-  optimization_suggestions: any;
+  cost_breakdown: CostBreakdown;
+  risk_factors: RiskFactor[];
+  optimization_suggestions: OptimizationSuggestion[];
+}
+
+export interface Milestone {
+  id: string;
+  title: string;
+  target_date: string;
+  completed: boolean;
+}
+
+export interface GoalAISuggestions {
+  next_steps?: string[];
+  potential_blockers?: string[];
+  optimization_tips?: string[];
 }
 
 export interface ProjectGoal {
@@ -143,8 +213,8 @@ export interface ProjectGoal {
   target_date: string;
   status: 'active' | 'completed' | 'paused' | 'cancelled';
   progress_percentage: number;
-  ai_suggestions: any;
-  ai_milestones: any;
+  ai_suggestions: GoalAISuggestions;
+  ai_milestones: Milestone[];
   is_tracking_started: boolean;
   last_updated: string;
   created_at: string;
@@ -161,3 +231,65 @@ export interface GoalProgress {
   is_milestone: boolean;
   data_source: 'manual' | 'automated' | 'ai_calculated';
 }
+
+// Helper function to handle Supabase errors
+export const handleSupabaseError = (error: PostgrestError | AuthError | null): string => {
+  if (!error) return '';
+  
+  // Handle specific error codes
+  switch (error.code) {
+    case '23505': // Unique violation
+      return 'A record with this information already exists.';
+    case '42501': // Insufficient privilege
+      return 'You do not have permission to perform this action.';
+    case 'PGRST301': // Row not found
+      return 'The requested record was not found.';
+    default:
+      return error.message || 'An unexpected error occurred.';
+  }
+};
+
+// Helper function for database operations with better error handling
+export const dbOperation = async <T>(
+  operation: () => Promise<{ data: T | null; error: PostgrestError | null }>
+): Promise<T> => {
+  try {
+    const { data, error } = await operation();
+    
+    if (error) {
+      console.error('Database operation failed:', error);
+      throw new Error(handleSupabaseError(error));
+    }
+    
+    if (!data) {
+      throw new Error('No data returned from operation');
+    }
+    
+    return data;
+  } catch (error) {
+    // Re-throw with context
+    throw error instanceof Error ? error : new Error('Database operation failed');
+  }
+};
+
+// Helper function for auth operations
+export const authOperation = async <T>(
+  operation: () => Promise<{ data: T | null; error: AuthError | null }>
+): Promise<T> => {
+  try {
+    const { data, error } = await operation();
+    
+    if (error) {
+      console.error('Auth operation failed:', error);
+      throw new Error(handleSupabaseError(error));
+    }
+    
+    if (!data) {
+      throw new Error('No data returned from auth operation');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Authentication failed');
+  }
+};

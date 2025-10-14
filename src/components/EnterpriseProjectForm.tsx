@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -16,7 +16,6 @@ import {
   FormControlLabel,
   Slider,
   LinearProgress,
-  Chip,
   Card,
   CardContent,
   CardHeader,
@@ -27,12 +26,9 @@ import {
   Step,
   StepLabel,
   Paper,
-  IconButton,
-  Tooltip,
   Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
+  FormGroup,
+  FormHelperText
 } from '@mui/material';
 import {
   ChevronLeft,
@@ -50,11 +46,18 @@ import {
   BarChart,
   Description,
   Refresh,
-  ExpandMore
+  AccessTime,
+  Cloud,
+  Dns,
+  GroupWork,
+  MonetizationOn,
+  Policy,
+  BugReport
 } from '@mui/icons-material';
-
-
-
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs, { Dayjs } from 'dayjs';
 import { supabase } from '@/lib/supabaseClient';
 
 interface FormData {
@@ -160,7 +163,7 @@ const STAGES = [
   { id: 11, title: "Cost Awareness", icon: Warning }
 ];
 
-export default function EnterpriseProjectForm({ open, onClose, onSuccess, projectCount }: EnterpriseProjectFormProps) {
+export default function EnterpriseProjectForm({ open, onClose, onSuccess }: EnterpriseProjectFormProps) {
   const [currentStage, setCurrentStage] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     // Initialize with default values
@@ -240,41 +243,17 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess, projec
   const [saving, setSaving] = useState(false);
   const [showCostPreview, setShowCostPreview] = useState(false);
 
-  // Calculate estimated costs based on form data
-  useEffect(() => {
-    calculateEstimatedCost();
-  }, [formData]);
-
-  // Auto-save functionality
-  useEffect(() => {
-    const autoSave = setInterval(() => {
-      if (formData.projectName) {
-        localStorage.setItem('enterpriseProjectForm', JSON.stringify({ formData, currentStage }));
-      }
-    }, 30000);
-
-    return () => clearInterval(autoSave);
-  }, [formData, currentStage]);
-
-  // Load saved form data on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('enterpriseProjectForm');
-    if (saved) {
-      const { formData: savedData, currentStage: savedStage } = JSON.parse(saved);
-      setFormData(savedData);
-      setCurrentStage(savedStage);
-    }
-  }, []);
-
-  const calculateEstimatedCost = () => {
+  const calculateEstimatedCost = useCallback(() => {
     let monthly = 0;
-    let breakdown = {
+    const breakdown = {
       infrastructure: 0,
       data: 0,
       apis: 0,
       monitoring: 0,
       compliance: 0,
-      personnel: 0
+      personnel: 0,
+      mlPlatform: 0,
+      contingency: 0
     };
 
     // GPU Infrastructure Costs
@@ -366,7 +345,33 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess, projec
       total: monthly * timelineMonths,
       breakdown
     });
-  };
+  }, [formData]);
+
+  // Calculate estimated costs based on form data
+  useEffect(() => {
+    calculateEstimatedCost();
+  }, [calculateEstimatedCost]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    const autoSave = setInterval(() => {
+      if (formData.projectName) {
+        localStorage.setItem('enterpriseProjectForm', JSON.stringify({ formData, currentStage }));
+      }
+    }, 30000);
+
+    return () => clearInterval(autoSave);
+  }, [formData, currentStage]);
+
+  // Load saved form data on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('enterpriseProjectForm');
+    if (saved) {
+      const { formData: savedData, currentStage: savedStage } = JSON.parse(saved);
+      setFormData(savedData);
+      setCurrentStage(savedStage);
+    }
+  }, []);
 
   const handleNext = () => {
     if (validateCurrentStage()) {
@@ -733,7 +738,7 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess, projec
                     </Grid>
                   </Grid>
                   <Typography variant="caption" color="text.secondary">
-                    Provide conservative estimates; we'll calculate growth scenarios
+                    Provide conservative estimates; we will calculate your growth scenarios
                   </Typography>
                 </CardContent>
               </Card>
@@ -1321,7 +1326,7 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess, projec
         {/* Stage Navigation */}
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stepper activeStep={currentStage - 1} alternativeLabel sx={{ flexWrap: 'wrap' }}>
-            {STAGES.map((stage, index) => {
+            {STAGES.map((stage) => {
               const Icon = stage.icon;
               return (
                 <Step key={stage.id} onClick={() => setCurrentStage(stage.id)} sx={{ cursor: 'pointer' }}>

@@ -144,3 +144,13 @@ export const isPolarWebhookValid = (_signature: string, _payload: string, _secre
   return true; // Placeholder - implement based on Polar's documentation
 };
 
+export const verifyPolarWebhook = async (
+  _signature: string,
+  _payload: string,
+  _secret: string
+): Promise<boolean> => {
+  // TODO: Implement webhook signature verification
+  // For now, return true (implement proper verification in production)
+  return true;
+};
+
