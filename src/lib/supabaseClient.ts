@@ -22,6 +22,7 @@ export interface Project {
   label_count: number
   monthly_tokens: number
   metadata: Record<string, unknown>
+  estimated_monthly_cost?: number;
   created_at: string
   updated_at: string
   budget?: number

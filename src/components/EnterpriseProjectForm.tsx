@@ -427,9 +427,31 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
         
         return hasCloudBasics && hasArchitecture && hasVolumeSettings;
       // Add validation for other stages
-      default:
-        return true;
+      case 6:
+        const hasUserProjections = !!(
+          formData.usersMonth1to3 && 
+          formData.usersMonth6 && 
+          formData.usersMonth12
+        );
+        
+        // Check if Month 24 is required and filled
+        const needsMonth24 = formData.projectTimeline === '18_months' || formData.projectTimeline === '24_months';
+        const hasMonth24 = needsMonth24 ? !!formData.usersMonth24 : true;
+        
+        const hasGrowthDetails = !!(formData.growthPattern && formData.revenueModel);
+        
+        // Validate logical growth progression
+        const month3 = parseInt(formData.usersMonth1to3) || 0;
+        const month6 = parseInt(formData.usersMonth6) || 0;
+        const month12 = parseInt(formData.usersMonth12) || 0;
+        const month24 = parseInt(formData.usersMonth24) || 0;
+        
+        const logicalProgression = month6 >= month3 && month12 >= month6 && (!needsMonth24 || month24 >= month12);
+        
+        return hasUserProjections && hasMonth24 && hasGrowthDetails && logicalProgression;
     }
+
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -1245,7 +1267,331 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
           </Box>
         );
 
-      // Add cases for stages 6-11...
+      case 6:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <People />
+                    <Typography variant="h6">Expected User Base Growth</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Provide realistic estimates for your user base growth. These projections will help calculate infrastructure scaling costs.
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid size={{xs:12, md:6}}>
+                    <TextField
+                      label="Month 1-3 Users *"
+                      type="number"
+                      value={formData.usersMonth1to3}
+                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth1to3: e.target.value }))
+                      }
+                      placeholder="e.g., 1000"
+                      fullWidth
+                      inputProps={{ min: 0, step: 1 }}
+                      helperText="Expected active users in first 3 months"
+                    />
+                  </Grid>
+                  
+                  <Grid size={{xs:12, md:6}}>
+                    <TextField
+                      label="Month 6 Users *"
+                      type="number"
+                      value={formData.usersMonth6}
+                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth6: e.target.value }))
+                      }
+                      placeholder="e.g., 5000"
+                      fullWidth
+                      inputProps={{ min: 0, step: 1 }}
+                      helperText="Expected active users at 6 months"
+                    />
+                  </Grid>
+                  
+                  <Grid size={{xs:12, md:6}}>
+                    <TextField
+                      label="Month 12 Users *"
+                      type="number"
+                      value={formData.usersMonth12}
+                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth12: e.target.value }))
+                      }
+                      placeholder="e.g., 25000"
+                      fullWidth
+                      inputProps={{ min: 0, step: 1 }}
+                      helperText="Expected active users at 1 year"
+                    />
+                  </Grid>
+                  
+                  {/* Show Month 24 field if timeline is longer than 12 months */}
+                  {(formData.projectTimeline === '18_months' || formData.projectTimeline === '24_months') && (
+                    <Grid size={{xs:12, md:6}}>
+                      <TextField
+                        label="Month 24 Users *"
+                        type="number"
+                        value={formData.usersMonth24}
+                        onChange={(e) => setFormData(prev => ({ ...prev, usersMonth24: e.target.value }))
+                        }
+                        placeholder="e.g., 100000"
+                        fullWidth
+                        inputProps={{ min: 0, step: 1 }}
+                        helperText="Expected active users at 2 years"
+                      />
+                    </Grid>
+                  )}
+                </Grid>
+
+                {/* User Growth Validation */}
+                {formData.usersMonth1to3 && formData.usersMonth6 && formData.usersMonth12 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>Growth Rate Analysis:</Typography>
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                      {(() => {
+                        const month3 = parseInt(formData.usersMonth1to3) || 0;
+                        const month6 = parseInt(formData.usersMonth6) || 0;
+                        const month12 = parseInt(formData.usersMonth12) || 0;
+                        
+                        const growth6m = month3 > 0 ? ((month6 - month3) / month3 * 100).toFixed(1) : '0';
+                        const growth12m = month6 > 0 ? ((month12 - month6) / month6 * 100).toFixed(1) : '0';
+                        
+                        return (
+                          <>
+                            <Typography variant="body2" color="text.secondary">
+                              3-6mo: +{growth6m}%
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              6-12mo: +{growth12m}%
+                            </Typography>
+                            {month24 && (
+                              <Typography variant="body2" color="text.secondary">
+                                12-24mo: +{((parseInt(formData.usersMonth24) - month12) / month12 * 100).toFixed(1)}%
+                              </Typography>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TrendingUp />
+                    <Typography variant="h6">Growth Pattern & Business Model</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Growth Pattern *</InputLabel>
+                  <Select
+                    value={formData.growthPattern}
+                    onChange={(e) => setFormData(prev => ({ ...prev, growthPattern: e.target.value }))}
+                    label="Growth Pattern *"
+                  >
+                    <MenuItem value="linear">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Linear</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Steady, consistent growth month over month
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="exponential">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Exponential</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Accelerating growth, each month growing faster than the last
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="seasonal">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Seasonal</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Growth varies by season/time of year (e.g., holiday shopping, tax season)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="viral_spike_expected">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Viral Spike Expected</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Expecting sudden, large spikes in usage (requires burst scaling)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="uncertain">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Uncertain</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Growth pattern unclear, need flexible scaling approach
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    This affects infrastructure auto-scaling configuration and cost buffers
+                  </FormHelperText>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Revenue Model Status *</InputLabel>
+                  <Select
+                    value={formData.revenueModel}
+                    onChange={(e) => setFormData(prev => ({ ...prev, revenueModel: e.target.value }))}
+                    label="Revenue Model Status *"
+                  >
+                    <MenuItem value="pre_revenue">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Pre-revenue</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Still in development/testing phase, no revenue yet
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="freemium">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Freemium</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Free tier with paid upgrades (affects infrastructure cost allocation)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="paid_from_launch">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Paid from Launch</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Users pay from day one (revenue can offset infrastructure costs)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="enterprise_sales">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Enterprise Sales</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          B2B model with larger contracts (predictable revenue, custom requirements)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    Revenue model affects cost optimization strategy and infrastructure priorities
+                  </FormHelperText>
+                </FormControl>
+              </CardContent>
+            </Card>
+
+            {/* Growth Pattern Implications */}
+            <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Info />
+                  Scaling Cost Implications
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid size={{xs:12, md:6}}>
+                    <Typography variant="subtitle2" gutterBottom>Growth Pattern Impact</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formData.growthPattern === 'linear' && 
+                        'Linear growth allows for predictable scaling and cost planning. Infrastructure can be sized incrementally.'}
+                      {formData.growthPattern === 'exponential' && 
+                        'Exponential growth requires aggressive auto-scaling and higher cost buffers. Consider reserved instances for base load.'}
+                      {formData.growthPattern === 'seasonal' && 
+                        'Seasonal patterns allow for scheduled scaling. Plan for peak season capacity and off-season cost optimization.'}
+                      {formData.growthPattern === 'viral_spike_expected' && 
+                        'Viral spikes need burst capacity planning. Consider CDN, caching, and emergency scaling procedures.'}
+                      {formData.growthPattern === 'uncertain' && 
+                        'Uncertain patterns require flexible, pay-as-you-go infrastructure with strong monitoring and alerts.'}
+                      {!formData.growthPattern && 'Select a growth pattern to see cost implications.'}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid size={{xs:12, md:6}}>
+                    <Typography variant="subtitle2" gutterBottom>Revenue Model Impact</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formData.revenueModel === 'pre_revenue' && 
+                        'Pre-revenue: Focus on cost optimization and efficient scaling. Consider spot instances and dev/staging environments.'}
+                      {formData.revenueModel === 'freemium' && 
+                        'Freemium: Balance free tier costs vs paid conversions. Monitor cost per user and conversion rates.'}
+                      {formData.revenueModel === 'paid_from_launch' && 
+                        'Paid model: Can justify higher infrastructure costs for better performance and reliability.'}
+                      {formData.revenueModel === 'enterprise_sales' && 
+                        'Enterprise: Premium infrastructure justified. Focus on reliability, security, and dedicated resources.'}
+                      {!formData.revenueModel && 'Select a revenue model to see cost implications.'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+
+                {/* Usage Cost Projection */}
+                {formData.usersMonth12 && formData.dailyApiCalls?.[0] && (
+                  <Box sx={{ mt: 3, p: 2, backgroundColor: 'background.paper', borderRadius: 1 }}>
+                    <Typography variant="subtitle2" gutterBottom>Projected Scale at 12 Months</Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{xs:6, md:3}}>
+                        <Typography variant="caption" color="text.secondary">Users</Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {parseInt(formData.usersMonth12).toLocaleString()}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{xs:6, md:3}}>
+                        <Typography variant="caption" color="text.secondary">Daily API Calls</Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {(formData.dailyApiCalls[0] * (parseInt(formData.usersMonth12) / (parseInt(formData.usersMonth1to3) || 1))).toLocaleString()}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{xs:6, md:3}}>
+                        <Typography variant="caption" color="text.secondary">Monthly API Volume</Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {(formData.dailyApiCalls[0] * 30 * (parseInt(formData.usersMonth12) / (parseInt(formData.usersMonth1to3) || 1))).toLocaleString()}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{xs:6, md:3}}>
+                        <Typography variant="caption" color="text.secondary">Scale Factor</Typography>
+                        <Typography variant="body2" fontWeight="medium" color="primary">
+                          {((parseInt(formData.usersMonth12) / (parseInt(formData.usersMonth1to3) || 1))).toFixed(1)}x
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Scaling Recommendations */}
+            {formData.growthPattern && formData.revenueModel && (
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Recommended Scaling Strategy:</strong><br />
+                  {(() => {
+                    if (formData.growthPattern === 'exponential' && formData.revenueModel === 'pre_revenue') {
+                      return 'Focus on cost-effective auto-scaling with aggressive monitoring. Consider spot instances and efficient caching.';
+                    } else if (formData.growthPattern === 'viral_spike_expected') {
+                      return 'Implement CDN, horizontal auto-scaling, and load testing. Plan for 10-50x traffic spikes.';
+                    } else if (formData.revenueModel === 'enterprise_sales') {
+                      return 'Prioritize reliability and dedicated resources. Consider reserved instances and premium support tiers.';
+                    } else if (formData.growthPattern === 'seasonal') {
+                      return 'Implement scheduled scaling with seasonal capacity planning. Use predictive scaling policies.';
+                    } else {
+                      return 'Balanced approach with monitoring-driven scaling and cost optimization based on growth metrics.';
+                    }
+                  })()}
+                </Typography>
+              </Alert>
+            )}
+          </Box>
+        );
+
+      // Add cases for stages 7-11...
       default:
         return (
           <Box sx={{ textAlign: 'center', py: 4 }}>

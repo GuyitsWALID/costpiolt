@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -259,6 +260,23 @@ export default function Dashboard() {
     }
   };
 
+  const handleDropdownToggle = (projectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (showDropdown === projectId) {
+      setShowDropdown(null);
+      setDropdownPosition(null);
+      return;
+    }
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + window.scrollY,
+      right: window.innerWidth - rect.right + window.scrollX
+    });
+    setShowDropdown(projectId);
+  };
+
   // Simple loading screen
   if (loading) {
     return (
@@ -287,8 +305,8 @@ export default function Dashboard() {
         return (
           <div className="flex-1 p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-              {/* Header Section */}
-              <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+              {/* Header Section - Add top margin on mobile to avoid hamburger overlap */}
+              <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mt-16 md:mt-0">
                 <div>
                   <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
                   <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Plan, prioritize, and accomplish your tasks with ease.</p>
@@ -434,42 +452,44 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Projects Display - Always use card view on mobile */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {filteredProjects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:p-6 hover:shadow-lg transition-shadow duration-200 group relative"
-                      >
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div 
-                            className="flex-1 cursor-pointer"
-                            onClick={() => handleProjectSelect(project.id)}
-                          >
-                            <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
-                              {project.name}
-                            </h3>
-                            <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
-                              {project.project_type.replace('_', ' ')}
-                            </span>
-                          </div>
-                          
-                          {/* Dropdown Menu */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowDropdown(showDropdown === project.id ? null : project.id);
-                              }}
-                              className="p-1.5 md:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-150"
+                  {/* Projects Display - Card view on mobile, toggle on desktop */}
+                  {projectViewType === 'card' ? (
+                    /* Card View */
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                      {filteredProjects.map((project) => (
+                        <div
+                          key={project.id}
+                          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:p-6 hover:shadow-lg transition-shadow duration-200 group relative"
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div 
+                              className="flex-1 cursor-pointer"
+                              onClick={() => handleProjectSelect(project.id)}
                             >
-                              <ChevronDown className="h-4 w-4" />
-                            </button>
+                              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
+                                {project.name}
+                              </h3>
+                              <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                                {project.project_type.replace('_', ' ')}
+                              </span>
+                            </div>
                             
-                            {showDropdown === project.id && (
-                              <div className="absolute right-0 top-8 md:top-10 w-44 md:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-[100]">
+                            {/* Dropdown Menu */}
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowDropdown(showDropdown === project.id ? null : project.id);
+                                }}
+                                className="p-1.5 md:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-150"
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </button>
+                              
+                              {showDropdown === project.id && (
+                                <div className="absolute right-0 top-8 md:top-10 w-44 md:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-[100]">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -495,63 +515,149 @@ export default function Dashboard() {
                                   <Trash2 className="h-4 w-4 mr-2 md:mr-3" />
                                   Delete Project
                                 </button>
-                              </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Content */}
+                          <div 
+                            className="cursor-pointer"
+                            onClick={() => handleProjectSelect(project.id)}
+                          >
+                            {project.description && (
+                              <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2 leading-relaxed">
+                                {project.description}
+                              </p>
                             )}
+
+                            <div className="space-y-2 md:space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Model Approach</span>
+                                <span className="text-gray-900 dark:text-white font-medium capitalize text-right">
+                                  {project.model_approach.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Dataset Size</span>
+                                <span className="text-gray-900 dark:text-white font-medium">{project.dataset_gb} GB</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Monthly Tokens</span>
+                                <span className="text-gray-900 dark:text-white font-medium">
+                                  {project.monthly_tokens.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      ))}
 
-                        {/* Card Content */}
-                        <div 
-                          className="cursor-pointer"
-                          onClick={() => handleProjectSelect(project.id)}
-                        >
-                          {project.description && (
-                            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2 leading-relaxed">
-                              {project.description}
-                            </p>
-                          )}
-
-                          <div className="space-y-2 md:space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500 dark:text-gray-400">Model Approach</span>
-                              <span className="text-gray-900 dark:text-white font-medium capitalize text-right">
-                                {project.model_approach.replace('_', ' ')}
-                              </span>
+                      {/* Project Limit Reached Message */}
+                      {projects.length >= 2 && (
+                        <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-yellow-50 dark:bg-yellow-900 rounded-2xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-700">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-6 h-6 md:w-8 md:h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center flex-shrink-0">
+                              <AlertTriangle className="h-4 w-4 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400" />
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500 dark:text-gray-400">Dataset Size</span>
-                              <span className="text-gray-900 dark:text-white font-medium">{project.dataset_gb} GB</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500 dark:text-gray-400">Monthly Tokens</span>
-                              <span className="text-gray-900 dark:text-white font-medium">
-                                {project.monthly_tokens.toLocaleString()}
-                              </span>
+                            <div className="space-y-2">
+                              <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base font-medium">
+                                Project Limit Reached
+                              </p>
+                              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                                You have reached the maximum number of projects allowed on the free tier. Upgrade to Pro to create unlimited projects.
+                              </p>
                             </div>
                           </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* List View */
+                    <div className="space-y-4">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                          {filteredProjects.map((project) => (
+                            <div
+                              key={project.id}
+                              className="p-4 md:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div 
+                                  className="flex-1 cursor-pointer pr-4"
+                                  onClick={() => handleProjectSelect(project.id)}
+                                >
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                      {project.name}
+                                    </h3>
+                                    <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                                      {project.project_type.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                  
+                                  {project.description && (
+                                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-1">
+                                      {project.description}
+                                    </p>
+                                  )}
+                                  
+                                  <div className="flex flex-wrap gap-4 text-sm">
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500 dark:text-gray-400 mr-1">Model:</span>
+                                      <span className="text-gray-900 dark:text-white font-medium capitalize">
+                                        {project.model_approach.replace('_', ' ')}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500 dark:text-gray-400 mr-1">Dataset:</span>
+                                      <span className="text-gray-900 dark:text-white font-medium">{project.dataset_gb} GB</span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500 dark:text-gray-400 mr-1">Tokens:</span>
+                                      <span className="text-gray-900 dark:text-white font-medium">
+                                        {project.monthly_tokens.toLocaleString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Dropdown Button */}
+                                <div className="flex-shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleDropdownToggle(project.id, e)}
+                                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-150"
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
 
-                    {/* Project Limit Reached Message */}
-                    {projects.length >= 2 && (
-                      <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-yellow-50 dark:bg-yellow-900 rounded-2xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-700">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 md:w-8 md:h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle className="h-4 w-4 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400" />
-                          </div>
-                          <div className="space-y-2">
-                            <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base font-medium">
-                              Project Limit Reached
-                            </p>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                              You have reached the maximum number of projects allowed on the free tier. Upgrade to Pro to create unlimited projects.
-                            </p>
+                      {/* Project Limit Reached Message */}
+                      {projects.length >= 2 && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900 rounded-2xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-700">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-6 h-6 md:w-8 md:h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center flex-shrink-0">
+                              <AlertTriangle className="h-4 w-4 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400" />
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base font-medium">
+                                Project Limit Reached
+                              </p>
+                              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                                You have reached the maximum number of projects allowed on the free tier. Upgrade to Pro to create unlimited projects.
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12 md:py-16 px-4">
@@ -573,388 +679,99 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-        );
-    }
-  };
-
-  // Enhanced error display
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <div className="text-center">
-            <div className="text-red-500 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Something went wrong
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {error}
-            </p>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  setError(null);
-                  
-                }}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  router.push('/auth');
-                }}
-                className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-              >
-                Sign Out & Return to Login
-              </button>
-            </div>
-          </div>
-        </div>
+            );
+        }
+      };
+    
+      return (
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Mobile Menu Button */}
+      <div className="fixed top-4 left-4 z-50 md:hidden">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700"
+        >
+          {isMobileMenuOpen ? (
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          ) : (
+            <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          )}
+        </button>
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:flex-row">
-      {/* Mobile Menu Button - Fixed at top left */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-        title="Toggle menu"
-      >
-        {isMobileMenuOpen ? 
-          <X className="h-5 w-5" /> : 
-          <Menu className="h-5 w-5" />
-        }
-      </button>
-
-      {/* Theme Toggle Button - Fixed position in top-right */}
-      <button
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className="fixed top-4 right-4 z-50 p-2 md:p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-        title="Toggle theme"
-      >
-        {theme === 'dark' ? 
-          <Sun className="h-4 w-4 md:h-5 md:w-5" /> : 
-          <Moon className="h-4 w-4 md:h-5 md:w-5" />
-        }
-      </button>
 
       {/* Sidebar */}
-      <Sidebar 
+      <Sidebar
+        user={user}
+        currentView={currentView}
+        onViewChange={handleViewChange}
+        isCollapsed={isSidebarCollapsed}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
         projects={projects}
         onProjectCreated={handleProjectCreated}
         onProjectSelect={handleProjectSelect}
         selectedProjectId={selectedProjectId}
-        user={user}
-        isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebar}
-        currentView={currentView}
-        onViewChange={handleViewChange}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
 
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'} ml-0 md:ml-0`}>
-        {currentView === 'projects' && (
-          <div className="flex-1 p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-            <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-                {/* Header Section */}
-                <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mt-16 md:mt-0">
-                <div>
-                  <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
-                  <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Plan, prioritize, and accomplish your tasks with ease.</p>
-                </div>
-                <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:space-x-4">
-                  <button
-                  onClick={handleExportData}
-                  className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full md:w-auto"
-                  >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Data
-                  </button>
-                  <button
-                  onClick={handleShowCreateForm}
-                  className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full md:w-auto"
-                  >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Project
-                  </button>
-                </div>
-                </div>
-
-              {/* Analytics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <div className="bg-blue-700 rounded-2xl p-4 md:p-6 text-white relative overflow-hidden">
-                  <div className="absolute top-3 right-3 md:top-4 md:right-4">
-                    <div className="w-6 h-6 md:w-8 md:h-8 bg-white/20 rounded-full flex items-center justify-center">
-                      <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
-                    </div>
-                  </div>
-                  <div className="space-y-1 md:space-y-2">
-                    <p className="text-emerald-100 text-xs md:text-sm font-medium">Total Projects</p>
-                    <p className="text-2xl md:text-3xl font-bold">{projects.length}</p>
-                    <p className="text-emerald-100 text-xs">Increased from last month</p>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-3 md:mb-4">
-                    <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <Database className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="w-5 h-5 md:w-6 md:h-6 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                      <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="space-y-1 md:space-y-2">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Dataset Size</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{totalDatasetSize} GB</p>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">Total across all projects</p>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-3 md:mb-4">
-                    <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                      <Activity className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div className="w-5 h-5 md:w-6 md:h-6 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                      <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="space-y-1 md:space-y-2">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Monthly Tokens</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{totalMonthlyTokens.toLocaleString()}</p>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">Combined usage</p>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-3 md:mb-4">
-                    <div className="w-6 h-6 md:w-8 md:h-8 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
-                      <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div className="w-5 h-5 md:w-6 md:h-6 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                      <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="space-y-1 md:space-y-2">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Avg Project Size</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{avgProjectSize.toFixed(1)} GB</p>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">Per project average</p>
-                  </div>
-                </div>
-              </div>
-
-              {projects.length > 0 ? (
-                <div className="space-y-4 md:space-y-6">
-                  {/* Project Controls */}
-                  <div className="flex flex-col space-y-4 md:flex-row md:gap-4 md:items-center md:justify-between md:space-y-0">
-                    <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4 flex-1">
-                      {/* Search */}
-                      <div className="relative flex-1 max-w-full md:max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Search projects"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-
-                      {/* Filter */}
-                      <div className="relative w-full md:w-auto">
-                        <select
-                          value={filterType}
-                          onChange={(e) => setFilterType(e.target.value)}
-                          className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full md:w-auto"
-                        >
-                          <option value="all">All Types</option>
-                          <option value="classification">Classification</option>
-                          <option value="generation">Generation</option>
-                          <option value="analysis">Analysis</option>
-                          <option value="other">Other</option>
-                        </select>
-                        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    {/* View Toggle - Hidden on mobile, shown on larger screens */}
-                    <div className="hidden md:flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                      <button
-                        onClick={() => setProjectViewType('card')}
-                        className={`p-2 rounded-md transition-colors ${
-                          projectViewType === 'card'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                        }`}
-                      >
-                        <Grid3X3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setProjectViewType('list')}
-                        className={`p-2 rounded-md transition-colors ${
-                          projectViewType === 'list'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                        }`}
-                      >
-                        <List className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Projects Display - Always use card view on mobile */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {filteredProjects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 md:p-6 hover:shadow-lg transition-shadow duration-200 group relative"
-                      >
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div 
-                            className="flex-1 cursor-pointer"
-                            onClick={() => handleProjectSelect(project.id)}
-                          >
-                            <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
-                              {project.name}
-                            </h3>
-                            <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
-                              {project.project_type.replace('_', ' ')}
-                            </span>
-                          </div>
-                          
-                          {/* Dropdown Menu */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowDropdown(showDropdown === project.id ? null : project.id);
-                              }}
-                              className="p-1.5 md:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-150"
-                            >
-                              <ChevronDown className="h-4 w-4" />
-                            </button>
-                            
-                            {showDropdown === project.id && (
-                              <div className="absolute right-0 top-8 md:top-10 w-44 md:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-[100]">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleProjectAction('details', project.id);
-                                  }}
-                                  className="w-full text-left px-3 md:px-4 py-2.5 md:py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors duration-150"
-                                >
-                                  <ExternalLink className="h-4 w-4 mr-2 md:mr-3" />
-                                  View Details
-                                </button>
-                                
-                                <hr className="border-gray-100 dark:border-gray-700" />
-                                
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleProjectAction('delete', project.id);
-                                  }}
-                                  className="w-full text-left px-3 md:px-4 py-2.5 md:py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 flex items-center transition-colors duration-150"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2 md:mr-3" />
-                                  Delete Project
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Card Content */}
-                        <div 
-                          className="cursor-pointer"
-                          onClick={() => handleProjectSelect(project.id)}
-                        >
-                          {project.description && (
-                            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2 leading-relaxed">
-                              {project.description}
-                            </p>
-                          )}
-
-                          <div className="space-y-2 md:space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500 dark:text-gray-400">Model Approach</span>
-                              <span className="text-gray-900 dark:text-white font-medium capitalize text-right">
-                                {project.model_approach.replace('_', ' ')}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500 dark:text-gray-400">Dataset Size</span>
-                              <span className="text-gray-900 dark:text-white font-medium">{project.dataset_gb} GB</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500 dark:text-gray-400">Monthly Tokens</span>
-                              <span className="text-gray-900 dark:text-white font-medium">
-                                {project.monthly_tokens.toLocaleString()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Project Limit Reached Message */}
-                    {projects.length >= 2 && (
-                      <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-yellow-50 dark:bg-yellow-900 rounded-2xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-700">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 md:w-8 md:h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle className="h-4 w-4 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400" />
-                          </div>
-                          <div className="space-y-2">
-                            <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base font-medium">
-                              Project Limit Reached
-                            </p>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                              You have reached the maximum number of projects allowed on the free tier. Upgrade to Pro to create unlimited projects.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 md:py-16 px-4">
-                  <Calculator className="h-16 w-16 md:h-20 md:w-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-                  <h3 className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                    Welcome to CostPilot Dashboard
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6 md:mb-8 max-w-md mx-auto text-sm md:text-base leading-relaxed">
-                    Create your first AI project to start tracking costs and managing budget forecasts.
-                  </p>
-                  <button
-                    onClick={handleShowCreateForm}
-                    className="inline-flex items-center px-6 md:px-8 py-3 border border-transparent text-sm md:text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full max-w-xs md:w-auto"
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Create Your First Project
-                  </button>
-                </div>
-              )}
+      {/* Main Content - Properly positioned relative to sidebar */}
+      <div className={`flex-1 transition-all duration-300 ${
+        // On desktop: adjust margin based on sidebar state
+        // On mobile: full width (sidebar overlays)
+        isSidebarCollapsed 
+          ? 'md:ml-20 ml-0' 
+          : 'md:ml-72 ml-0'
+      }`}>
+        {renderMainContent()}
+      </div>
+    
+      {/* Dropdown Menu Portal - Fixed position outside all containers */}
+      {showDropdown && dropdownPosition && projectViewType === 'list' && (
+        <>
+          <div 
+            className="fixed inset-0 z-[9998]" 
+            onClick={() => {
+              setShowDropdown(null);
+              setDropdownPosition(null);
+            }}
+          />
+          <div
+            className="fixed z-[9999]"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+            }}
+          >
+            <div className="w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleProjectAction('details', showDropdown);
+                }}
+                className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors duration-150"
+              >
+                <ExternalLink className="h-4 w-4 mr-3" />
+                View Details
+              </button>
+              
+              <hr className="border-gray-100 dark:border-gray-700" />
+              
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleProjectAction('delete', showDropdown);
+                }}
+                className="w-full text-left px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 flex items-center transition-colors duration-150"
+              >
+                <Trash2 className="h-4 w-4 mr-3" />
+                Delete Project
+              </button>
             </div>
           </div>
-        )}
-        {currentView !== 'projects' && renderMainContent()}
-      </div>
+        </>
+      )}
 
       {/* Create Project Dialog */}
       <MaterialThemeProvider>
@@ -1166,6 +983,7 @@ export default function Dashboard() {
                 </div>
               </div>
               
+
               <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:justify-center">
                 <button
                   type="button"

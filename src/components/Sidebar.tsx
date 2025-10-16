@@ -10,7 +10,8 @@ import {
 	Settings,
 	BarChart3,
 	LogOut,
-	User2Icon
+	User2Icon,
+	Telescope
 } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import type { Project } from '@/lib/supabaseClient';
@@ -111,7 +112,7 @@ export default function Sidebar({
 
 	return (
 		<>
-			{/* Mobile Overlay */}
+			{/* Mobile Overlay - Now closes sidebar on click */}
 			{isMobile && isMobileMenuOpen && (
 				<div
 					className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
@@ -119,23 +120,24 @@ export default function Sidebar({
 				/>
 			)}
 
-			{/* Sidebar */}
+			{/* Sidebar - Fixed positioning for proper layout */}
 			<div
 				className={`
-          fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40
-          ${isMobile ? `w-80 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}` : `${isCollapsed ? 'w-20' : 'w-72'}`}
+          fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 flex flex-col
+          ${isMobile 
+            ? `w-80 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}` 
+            : `${isCollapsed ? 'w-20' : 'w-72'} translate-x-0`
+          }
         `}
 			>
-				{/* Logo and Toggle */}
-				<div
-					className={`flex items-center p-4 ${isCollapsed && !isMobile ? 'flex-col space-y-3' : 'justify-between'} mb-6 md:mb-8 border-b border-gray-200 dark:border-slate-700`}
-				>
+				{/* Logo and Toggle - Mobile close button removed */}
+				<div className={`flex items-center p-4 mb-6 md:mb-8 border-b border-gray-200 dark:border-slate-700 ${isMobile ? 'justify-between' : isCollapsed ? 'flex-col space-y-3 justify-center' : 'justify-between'}`}>
 					<div className={`flex items-center ${isCollapsed && !isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
 						<Calculator className={`${isCollapsed && !isMobile ? 'h-6 w-6' : 'h-6 w-6'} text-blue-500 dark:text-blue-400`} />
 						{(!isCollapsed || isMobile) && <span className="text-xl font-bold text-gray-900 dark:text-white">CostPilot</span>}
 					</div>
 
-					{/* Desktop toggle button */}
+					{/* Desktop toggle button only */}
 					{!isMobile && (
 						<button
 							onClick={onToggleCollapse}
@@ -143,17 +145,6 @@ export default function Sidebar({
 							title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 						>
 							{isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-4 w-4" />}
-						</button>
-					)}
-
-					{/* Mobile close button */}
-					{isMobile && (
-						<button
-							onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
-							className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-							title="Close menu"
-						>
-							<X className="h-5 w-5" />
 						</button>
 					)}
 				</div>
@@ -178,7 +169,7 @@ export default function Sidebar({
 						}`}
 						title="Budget Tool"
 					>
-						<BarChart3 className={`${isCollapsed && !isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
+						<Telescope  className={`${isCollapsed && !isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
 						{(!isCollapsed || isMobile) && <span>Budget Tool</span>}
 					</button>
 				</nav>
@@ -428,20 +419,26 @@ export default function Sidebar({
 												window.open('https://polar.sh/checkout/3bdd0f57-bac5-4190-8847-f48681c18e43', '_blank');
 												setShowUpgradeModal(false);
 											}}
-											className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 md:py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 md:transform md:hover:scale-105 shadow-lg text-sm"
-										>
-											Upgrade to Enterprise
-										</button>
-										<p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-											14-day free trial • Cancel anytime
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
-		</>
-	);
-}
+																						className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 md:py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg text-sm"
+																					>
+																						Contact Sales
+																					</button>
+																				</div>
+																			</div>
+																		</div>
+																		<div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+																			<button
+																				type="button"
+																				onClick={() => setShowUpgradeModal(false)}
+																				className="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto sm:text-sm"
+																			>
+																				Close
+																			</button>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														)}
+													</>
+												);
+											}
