@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Github, Calculator } from "lucide-react";
+import { Github, Calculator, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function AuthPage() {
   const [loading, setLoading] = useState<'google' | 'github' | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -43,15 +46,19 @@ export default function AuthPage() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading('google');
+      setError(null);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
+      
       if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
+      setError('Failed to sign in with Google. Please try again.');
       setLoading(null);
     }
   };
@@ -59,15 +66,72 @@ export default function AuthPage() {
   const handleGithubSignIn = async () => {
     try {
       setLoading('github');
+      setError(null);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
+      
       if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with GitHub:', error);
+      setError('GitHub sign-in is currently unavailable. Please use Google sign-in or try again later.');
+      setLoading(null);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    setLoading('google');
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        router.push('/dashboard');
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'An error occurred during sign in');
+      console.error('Sign in error:', error);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleEmailSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    setLoading('google');
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        setError('Check your email for the confirmation link!');
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'An error occurred during sign up');
+      console.error('Sign up error:', error);
+    } finally {
       setLoading(null);
     }
   };
@@ -114,6 +178,16 @@ export default function AuthPage() {
               </p>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               {/* Google Sign In */}
               <Button
@@ -149,11 +223,11 @@ export default function AuthPage() {
                 )}
               </Button>
 
-              {/* GitHub Sign In */}
+              {/* GitHub Sign In - Temporarily disabled with note */}
               <Button
                 onClick={handleGithubSignIn}
                 disabled={loading !== null || !supabase}
-                className="w-full h-12 bg-gray-900 text-white flex items-center justify-center space-x-3 font-khand hover:bg-gray-900 hover:scale-105 transition-transform duration-200"
+                className="w-full h-12 bg-gray-900 text-white flex items-center justify-center space-x-3 font-khand hover:bg-gray-900 hover:scale-105 transition-transform duration-200 disabled:opacity-50"
               >
                 {loading === 'github' ? (
                   <div className="w-5 h-5 border-2 border-gray-300 border-t-white rounded-full animate-spin" />
@@ -164,6 +238,13 @@ export default function AuthPage() {
                   </>
                 )}
               </Button>
+
+              {/* Note about GitHub */}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground font-khand">
+                  Having trouble with GitHub? Use Google sign-in for the best experience.
+                </p>
+              </div>
             </div>
 
             <div className="mt-8 text-center">

@@ -21,7 +21,6 @@ import {
   CardHeader,
   Typography,
   Box,
-  Grid,
   Stepper,
   Step,
   StepLabel,
@@ -519,40 +518,36 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
               variant="outlined"
             />
             
-            <Grid container spacing={2}>
-              <Grid size={{xs:12, md:6}}>
-                <FormControl fullWidth>
-                  <InputLabel>Development Stage *</InputLabel>
-                  <Select
-                    value={formData.developmentStage}
-                    onChange={(e) => setFormData(prev => ({ ...prev, developmentStage: e.target.value }))}
-                    label="Development Stage *"
-                  >
-                    <MenuItem value="research_poc">Research/POC</MenuItem>
-                    <MenuItem value="mvp_development">MVP Development</MenuItem>
-                    <MenuItem value="production_ready">Production Ready</MenuItem>
-                    <MenuItem value="scaling_phase">Scaling Phase</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Development Stage *</InputLabel>
+                <Select
+                  value={formData.developmentStage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, developmentStage: e.target.value }))}
+                  label="Development Stage *"
+                >
+                  <MenuItem value="research_poc">Research/POC</MenuItem>
+                  <MenuItem value="mvp_development">MVP Development</MenuItem>
+                  <MenuItem value="production_ready">Production Ready</MenuItem>
+                  <MenuItem value="scaling_phase">Scaling Phase</MenuItem>
+                </Select>
+              </FormControl>
               
-              <Grid size={{xs:12, md:6}}>
-                <FormControl fullWidth>
-                  <InputLabel>Project Timeline *</InputLabel>
-                  <Select
-                    value={formData.projectTimeline}
-                    onChange={(e) => setFormData(prev => ({ ...prev, projectTimeline: e.target.value }))}
-                    label="Project Timeline *"
-                  >
-                    <MenuItem value="3_months">3 months</MenuItem>
-                    <MenuItem value="6_months">6 months</MenuItem>
-                    <MenuItem value="12_months">12 months</MenuItem>
-                    <MenuItem value="18_months">18 months</MenuItem>
-                    <MenuItem value="24_months">24+ months</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
+              <FormControl fullWidth>
+                <InputLabel>Project Timeline *</InputLabel>
+                <Select
+                  value={formData.projectTimeline}
+                  onChange={(e) => setFormData(prev => ({ ...prev, projectTimeline: e.target.value }))}
+                  label="Project Timeline *"
+                >
+                  <MenuItem value="3_months">3 months</MenuItem>
+                  <MenuItem value="6_months">6 months</MenuItem>
+                  <MenuItem value="12_months">12 months</MenuItem>
+                  <MenuItem value="18_months">18 months</MenuItem>
+                  <MenuItem value="24_months">24+ months</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
             
             <TextField
               label="Expected Launch Date"
@@ -735,30 +730,26 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                     </Select>
                   </FormControl>
                   
-                  <Grid container spacing={2}>
-                    <Grid size={{xs:12, md:6}}>
-                      <TextField
-                        label="Input Tokens (millions/month) *"
-                        type="number"
-                        inputProps={{ step: 0.1 }}
-                        value={formData.inputTokens}
-                        onChange={(e) => setFormData(prev => ({ ...prev, inputTokens: e.target.value }))}
-                        placeholder="e.g., 10.5"
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid size={{xs:12, md:6}}>
-                      <TextField
-                        label="Output Tokens (millions/month) *"
-                        type="number"
-                        inputProps={{ step: 0.1 }}
-                        value={formData.outputTokens}
-                        onChange={(e) => setFormData(prev => ({ ...prev, outputTokens: e.target.value }))}
-                        placeholder="e.g., 5.2"
-                        fullWidth
-                      />
-                    </Grid>
-                  </Grid>
+                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                    <TextField
+                      label="Input Tokens (millions/month) *"
+                      type="number"
+                      inputProps={{ step: 0.1 }}
+                      value={formData.inputTokens}
+                      onChange={(e) => setFormData(prev => ({ ...prev, inputTokens: e.target.value }))}
+                      placeholder="e.g., 10.5"
+                      fullWidth
+                    />
+                    <TextField
+                      label="Output Tokens (millions/month) *"
+                      type="number"
+                      inputProps={{ step: 0.1 }}
+                      value={formData.outputTokens}
+                      onChange={(e) => setFormData(prev => ({ ...prev, outputTokens: e.target.value }))}
+                      placeholder="e.g., 5.2"
+                      fullWidth
+                    />
+                  </Box>
                   <Typography variant="caption" color="text.secondary">
                     Provide conservative estimates; we will calculate your growth scenarios
                   </Typography>
@@ -792,39 +783,35 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                   helperText="Enter the total size of your dataset in GB"
                 />
 
-                <Grid container spacing={2}>
-                  <Grid size={{xs:12, md:6}}>
-                    <FormControl fullWidth>
-                      <InputLabel>Storage Type *</InputLabel>
-                      <Select
-                        value={formData.storageType}
-                        onChange={(e) => setFormData(prev => ({ ...prev, storageType: e.target.value }))}
-                        label="Storage Type *"
-                      >
-                        <MenuItem value="object_storage">Object Storage (S3/GCS)</MenuItem>
-                        <MenuItem value="block_storage">Block Storage</MenuItem>
-                        <MenuItem value="database">Database</MenuItem>
-                        <MenuItem value="hybrid">Hybrid</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Storage Type *</InputLabel>
+                    <Select
+                      value={formData.storageType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, storageType: e.target.value }))}
+                      label="Storage Type *"
+                    >
+                      <MenuItem value="object_storage">Object Storage (S3/GCS)</MenuItem>
+                      <MenuItem value="block_storage">Block Storage</MenuItem>
+                      <MenuItem value="database">Database</MenuItem>
+                      <MenuItem value="hybrid">Hybrid</MenuItem>
+                    </Select>
+                  </FormControl>
                   
-                  <Grid size={{xs:12, md:6}}>
-                    <FormControl fullWidth>
-                      <InputLabel>Data Retention Period *</InputLabel>
-                      <Select
-                        value={formData.retentionPeriod}
-                        onChange={(e) => setFormData(prev => ({ ...prev, retentionPeriod: e.target.value }))}
-                        label="Data Retention Period *"
-                      >
-                        <MenuItem value="3_months">3 months</MenuItem>
-                        <MenuItem value="6_months">6 months</MenuItem>
-                        <MenuItem value="1_year">1 year</MenuItem>
-                        <MenuItem value="2_plus_years">2+ years</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
+                  <FormControl fullWidth>
+                    <InputLabel>Data Retention Period *</InputLabel>
+                    <Select
+                      value={formData.retentionPeriod}
+                      onChange={(e) => setFormData(prev => ({ ...prev, retentionPeriod: e.target.value }))}
+                      label="Data Retention Period *"
+                    >
+                      <MenuItem value="3_months">3 months</MenuItem>
+                      <MenuItem value="6_months">6 months</MenuItem>
+                      <MenuItem value="1_year">1 year</MenuItem>
+                      <MenuItem value="2_plus_years">2+ years</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
 
                 <FormControl fullWidth>
                   <InputLabel>Redundancy Requirements *</InputLabel>
@@ -997,51 +984,47 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                 }
               />
               <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Grid container spacing={2}>
-                  <Grid size={{xs:12, md:6}}>
-                    <FormControl fullWidth>
-                      <InputLabel>Cloud Provider Preference *</InputLabel>
-                      <Select
-                        value={formData.cloudProvider}
-                        onChange={(e) => setFormData(prev => ({ ...prev, cloudProvider: e.target.value }))
-                        }
-                        label="Cloud Provider Preference *"
-                      >
-                        <MenuItem value="aws">AWS</MenuItem>
-                        <MenuItem value="google_cloud">Google Cloud</MenuItem>
-                        <MenuItem value="azure">Azure</MenuItem>
-                        <MenuItem value="multi_cloud">Multi-cloud</MenuItem>
-                        <MenuItem value="on_premise">On-premise</MenuItem>
-                        <MenuItem value="undecided">Undecided</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Cloud Provider Preference *</InputLabel>
+                    <Select
+                      value={formData.cloudProvider}
+                      onChange={(e) => setFormData(prev => ({ ...prev, cloudProvider: e.target.value }))
+                      }
+                      label="Cloud Provider Preference *"
+                    >
+                      <MenuItem value="aws">AWS</MenuItem>
+                      <MenuItem value="google_cloud">Google Cloud</MenuItem>
+                      <MenuItem value="azure">Azure</MenuItem>
+                      <MenuItem value="multi_cloud">Multi-cloud</MenuItem>
+                      <MenuItem value="on_premise">On-premise</MenuItem>
+                      <MenuItem value="undecided">Undecided</MenuItem>
+                    </Select>
+                  </FormControl>
                   
-                  <Grid size={{xs:12, md:6}}>
-                    <FormControl fullWidth>
-                      <InputLabel>Primary Region/Geography *</InputLabel>
-                      <Select
-                        value={formData.primaryRegion}
-                        onChange={(e) => setFormData(prev => ({ ...prev, primaryRegion: e.target.value }))}
-                        label="Primary Region/Geography *"
-                      >
-                        <MenuItem value="us_east">US East (N. Virginia)</MenuItem>
-                        <MenuItem value="us_west">US West (Oregon)</MenuItem>
-                        <MenuItem value="us_central">US Central (Iowa)</MenuItem>
-                        <MenuItem value="canada_central">Canada Central (Toronto)</MenuItem>
-                        <MenuItem value="europe_west">Europe West (Ireland)</MenuItem>
-                        <MenuItem value="europe_central">Europe Central (Frankfurt)</MenuItem>
-                        <MenuItem value="uk_south">UK South (London)</MenuItem>
-                        <MenuItem value="asia_pacific_southeast">Asia Pacific Southeast (Singapore)</MenuItem>
-                        <MenuItem value="asia_pacific_northeast">Asia Pacific Northeast (Tokyo)</MenuItem>
-                        <MenuItem value="asia_pacific_south">Asia Pacific South (Mumbai)</MenuItem>
-                        <MenuItem value="australia_southeast">Australia Southeast (Sydney)</MenuItem>
-                        <MenuItem value="south_america_east">South America East (São Paulo)</MenuItem>
-                        <MenuItem value="other">Other Region</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
+                  <FormControl fullWidth>
+                    <InputLabel>Primary Region/Geography *</InputLabel>
+                    <Select
+                      value={formData.primaryRegion}
+                      onChange={(e) => setFormData(prev => ({ ...prev, primaryRegion: e.target.value }))}
+                      label="Primary Region/Geography *"
+                    >
+                      <MenuItem value="us_east">US East (N. Virginia)</MenuItem>
+                      <MenuItem value="us_west">US West (Oregon)</MenuItem>
+                      <MenuItem value="us_central">US Central (Iowa)</MenuItem>
+                      <MenuItem value="canada_central">Canada Central (Toronto)</MenuItem>
+                      <MenuItem value="europe_west">Europe West (Ireland)</MenuItem>
+                      <MenuItem value="europe_central">Europe Central (Frankfurt)</MenuItem>
+                      <MenuItem value="uk_south">UK South (London)</MenuItem>
+                      <MenuItem value="asia_pacific_southeast">Asia Pacific Southeast (Singapore)</MenuItem>
+                      <MenuItem value="asia_pacific_northeast">Asia Pacific Northeast (Tokyo)</MenuItem>
+                      <MenuItem value="asia_pacific_south">Asia Pacific South (Mumbai)</MenuItem>
+                      <MenuItem value="australia_southeast">Australia Southeast (Sydney)</MenuItem>
+                      <MenuItem value="south_america_east">South America East (São Paulo)</MenuItem>
+                      <MenuItem value="other">Other Region</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
 
                 <Alert severity="info" sx={{ mt: 2 }}>
                   <Typography variant="body2">
@@ -1175,40 +1158,36 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                   </Typography>
                 </Box>
 
-                <Grid container spacing={2}>
-                  <Grid size={{xs:12, md:6}}>
-                    <FormControl fullWidth>
-                      <InputLabel>Peak Traffic Multiplier *</InputLabel>
-                      <Select
-                        value={formData.peakTrafficMultiplier}
-                        onChange={(e) => setFormData(prev => ({ ...prev, peakTrafficMultiplier: e.target.value }))
-                        }
-                        label="Peak Traffic Multiplier *"
-                      >
-                        <MenuItem value="1x">1x (Steady traffic)</MenuItem>
-                        <MenuItem value="2-5x">2-5x (Normal variance)</MenuItem>
-                        <MenuItem value="5-10x">5-10x (High variance)</MenuItem>
-                        <MenuItem value="10x_plus">10x+ (Viral potential)</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Peak Traffic Multiplier *</InputLabel>
+                    <Select
+                      value={formData.peakTrafficMultiplier}
+                      onChange={(e) => setFormData(prev => ({ ...prev, peakTrafficMultiplier: e.target.value }))
+                      }
+                      label="Peak Traffic Multiplier *"
+                    >
+                      <MenuItem value="1x">1x (Steady traffic)</MenuItem>
+                      <MenuItem value="2-5x">2-5x (Normal variance)</MenuItem>
+                      <MenuItem value="5-10x">5-10x (High variance)</MenuItem>
+                      <MenuItem value="10x_plus">10x+ (Viral potential)</MenuItem>
+                    </Select>
+                  </FormControl>
                   
-                  <Grid size={{xs:12, md:6}}>
-                    <FormControl fullWidth>
-                      <InputLabel>Latency Requirements *</InputLabel>
-                      <Select
-                        value={formData.latencyRequirements}
-                        onChange={(e) => setFormData(prev => ({ ...prev, latencyRequirements: e.target.value }))}
-                        label="Latency Requirements *"
-                      >
-                        <MenuItem value="sub_100ms">&lt;100ms (Real-time interactive)</MenuItem>
-                        <MenuItem value="sub_500ms">&lt;500ms (Near real-time)</MenuItem>
-                        <MenuItem value="sub_2s">&lt;2s (Standard web response)</MenuItem>
-                        <MenuItem value="over_2s_acceptable">&gt;2s acceptable (Batch-friendly)</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
+                  <FormControl fullWidth>
+                    <InputLabel>Latency Requirements *</InputLabel>
+                    <Select
+                      value={formData.latencyRequirements}
+                      onChange={(e) => setFormData(prev => ({ ...prev, latencyRequirements: e.target.value }))}
+                      label="Latency Requirements *"
+                    >
+                      <MenuItem value="sub_100ms">&lt;100ms (Real-time interactive)</MenuItem>
+                      <MenuItem value="sub_500ms">&lt;500ms (Near real-time)</MenuItem>
+                      <MenuItem value="sub_2s">&lt;2s (Standard web response)</MenuItem>
+                      <MenuItem value="over_2s_acceptable">&gt;2s acceptable (Batch-friendly)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
 
                 <Alert severity="info">
                   <Typography variant="body2">
@@ -1226,8 +1205,8 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                   <Info />
                   Deployment Cost Factors
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid size={{xs:12, md:4}}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, flexWrap: 'wrap' }}>
+                  <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}>
                     <Typography variant="subtitle2" gutterBottom>Cloud Provider</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formData.cloudProvider === 'aws' && 'AWS: Generally most cost-effective for large scale'}
@@ -1238,8 +1217,8 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                       {formData.cloudProvider === 'undecided' && 'We\'ll provide recommendations'}
                       {!formData.cloudProvider && 'Select a provider to see cost implications'}
                     </Typography>
-                  </Grid>
-                  <Grid size={{xs:12, md:4}}>
+                  </Box>
+                  <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}>
                     <Typography variant="subtitle2" gutterBottom>Architecture Impact</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formData.deploymentArchitecture.includes('real_time_api') && '• Real-time: Higher compute costs'}
@@ -1250,8 +1229,8 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                       <br />
                       {formData.deploymentArchitecture.includes('hybrid') && '• Hybrid: Balanced cost/performance'}
                     </Typography>
-                  </Grid>
-                  <Grid size={{xs:12, md:4}}>
+                  </Box>
+                  <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}>
                     <Typography variant="subtitle2" gutterBottom>Scale Considerations</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Daily volume: {formData.dailyApiCalls[0]?.toLocaleString() || 'Not set'}
@@ -1260,8 +1239,8 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                       <br />
                       Latency target: {formData.latencyRequirements?.replace('_', ' ') || 'Not set'}
                     </Typography>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
           </Box>
@@ -1284,66 +1263,62 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                   Provide realistic estimates for your user base growth. These projections will help calculate infrastructure scaling costs.
                 </Typography>
                 
-                <Grid container spacing={2}>
-                  <Grid size={{xs:12, md:6}}>
-                    <TextField
-                      label="Month 1-3 Users *"
-                      type="number"
-                      value={formData.usersMonth1to3}
-                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth1to3: e.target.value }))
-                      }
-                      placeholder="e.g., 1000"
-                      fullWidth
-                      inputProps={{ min: 0, step: 1 }}
-                      helperText="Expected active users in first 3 months"
-                    />
-                  </Grid>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, flexWrap: 'wrap' }}>
+                  <TextField
+                    label="Month 1-3 Users *"
+                    type="number"
+                    value={formData.usersMonth1to3}
+                    onChange={(e) => setFormData(prev => ({ ...prev, usersMonth1to3: e.target.value }))
+                    }
+                    placeholder="e.g., 1000"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="Expected active users in first 3 months"
+                    sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}
+                  />
                   
-                  <Grid size={{xs:12, md:6}}>
-                    <TextField
-                      label="Month 6 Users *"
-                      type="number"
-                      value={formData.usersMonth6}
-                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth6: e.target.value }))
-                      }
-                      placeholder="e.g., 5000"
-                      fullWidth
-                      inputProps={{ min: 0, step: 1 }}
-                      helperText="Expected active users at 6 months"
-                    />
-                  </Grid>
+                  <TextField
+                    label="Month 6 Users *"
+                    type="number"
+                    value={formData.usersMonth6}
+                    onChange={(e) => setFormData(prev => ({ ...prev, usersMonth6: e.target.value }))
+                    }
+                    placeholder="e.g., 5000"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="Expected active users at 6 months"
+                    sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}
+                  />
                   
-                  <Grid size={{xs:12, md:6}}>
-                    <TextField
-                      label="Month 12 Users *"
-                      type="number"
-                      value={formData.usersMonth12}
-                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth12: e.target.value }))
-                      }
-                      placeholder="e.g., 25000"
-                      fullWidth
-                      inputProps={{ min: 0, step: 1 }}
-                      helperText="Expected active users at 1 year"
-                    />
-                  </Grid>
+                  <TextField
+                    label="Month 12 Users *"
+                    type="number"
+                    value={formData.usersMonth12}
+                    onChange={(e) => setFormData(prev => ({ ...prev, usersMonth12: e.target.value }))
+                    }
+                    placeholder="e.g., 25000"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="Expected active users at 1 year"
+                    sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}
+                  />
                   
                   {/* Show Month 24 field if timeline is longer than 12 months */}
                   {(formData.projectTimeline === '18_months' || formData.projectTimeline === '24_months') && (
-                    <Grid size={{xs:12, md:6}}>
-                      <TextField
-                        label="Month 24 Users *"
-                        type="number"
-                        value={formData.usersMonth24}
-                        onChange={(e) => setFormData(prev => ({ ...prev, usersMonth24: e.target.value }))
-                        }
-                        placeholder="e.g., 100000"
-                        fullWidth
-                        inputProps={{ min: 0, step: 1 }}
-                        helperText="Expected active users at 2 years"
-                      />
-                    </Grid>
+                    <TextField
+                      label="Month 24 Users *"
+                      type="number"
+                      value={formData.usersMonth24}
+                      onChange={(e) => setFormData(prev => ({ ...prev, usersMonth24: e.target.value }))
+                      }
+                      placeholder="e.g., 100000"
+                      fullWidth
+                      inputProps={{ min: 0, step: 1 }}
+                      helperText="Expected active users at 2 years"
+                      sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}
+                    />
                   )}
-                </Grid>
+                </Box>
 
                 {/* User Growth Validation */}
                 {formData.usersMonth1to3 && formData.usersMonth6 && formData.usersMonth12 && (
@@ -1366,7 +1341,7 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                             <Typography variant="body2" color="text.secondary">
                               6-12mo: +{growth12m}%
                             </Typography>
-                            {month24 && (
+                            {month12 && (
                               <Typography variant="body2" color="text.secondary">
                                 12-24mo: +{((parseInt(formData.usersMonth24) - month12) / month12 * 100).toFixed(1)}%
                               </Typography>
@@ -1498,8 +1473,8 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                   Scaling Cost Implications
                 </Typography>
                 
-                <Grid container spacing={3}>
-                  <Grid size={{xs:12, md:6}}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, flexWrap: 'wrap' }}>
+                  <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}>
                     <Typography variant="subtitle2" gutterBottom>Growth Pattern Impact</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formData.growthPattern === 'linear' && 
@@ -1514,9 +1489,9 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                         'Uncertain patterns require flexible, pay-as-you-go infrastructure with strong monitoring and alerts.'}
                       {!formData.growthPattern && 'Select a growth pattern to see cost implications.'}
                     </Typography>
-                  </Grid>
+                  </Box>
                   
-                  <Grid size={{xs:12, md:6}}>
+                  <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' } }}>
                     <Typography variant="subtitle2" gutterBottom>Revenue Model Impact</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formData.revenueModel === 'pre_revenue' && 
@@ -1529,39 +1504,39 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
                         'Enterprise: Premium infrastructure justified. Focus on reliability, security, and dedicated resources.'}
                       {!formData.revenueModel && 'Select a revenue model to see cost implications.'}
                     </Typography>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
 
                 {/* Usage Cost Projection */}
                 {formData.usersMonth12 && formData.dailyApiCalls?.[0] && (
                   <Box sx={{ mt: 3, p: 2, backgroundColor: 'background.paper', borderRadius: 1 }}>
                     <Typography variant="subtitle2" gutterBottom>Projected Scale at 12 Months</Typography>
-                    <Grid container spacing={2}>
-                      <Grid size={{xs:6, md:3}}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flexWrap: 'wrap' }}>
+                      <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 calc(25% - 12px)' } }}>
                         <Typography variant="caption" color="text.secondary">Users</Typography>
                         <Typography variant="body2" fontWeight="medium">
                           {parseInt(formData.usersMonth12).toLocaleString()}
                         </Typography>
-                      </Grid>
-                      <Grid size={{xs:6, md:3}}>
+                      </Box>
+                      <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 calc(25% - 12px)' } }}>
                         <Typography variant="caption" color="text.secondary">Daily API Calls</Typography>
                         <Typography variant="body2" fontWeight="medium">
                           {(formData.dailyApiCalls[0] * (parseInt(formData.usersMonth12) / (parseInt(formData.usersMonth1to3) || 1))).toLocaleString()}
                         </Typography>
-                      </Grid>
-                      <Grid size={{xs:6, md:3}}>
+                      </Box>
+                      <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 calc(25% - 12px)' } }}>
                         <Typography variant="caption" color="text.secondary">Monthly API Volume</Typography>
                         <Typography variant="body2" fontWeight="medium">
                           {(formData.dailyApiCalls[0] * 30 * (parseInt(formData.usersMonth12) / (parseInt(formData.usersMonth1to3) || 1))).toLocaleString()}
                         </Typography>
-                      </Grid>
-                      <Grid size={{xs:6, md:3}}>
+                      </Box>
+                      <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 calc(25% - 12px)' } }}>
                         <Typography variant="caption" color="text.secondary">Scale Factor</Typography>
                         <Typography variant="body2" fontWeight="medium" color="primary">
                           {((parseInt(formData.usersMonth12) / (parseInt(formData.usersMonth1to3) || 1))).toFixed(1)}x
                         </Typography>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Box>
                   </Box>
                 )}
               </CardContent>

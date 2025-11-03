@@ -8,7 +8,7 @@ import type { Project } from '@/lib/supabaseClient';
 import Sidebar from '@/components/Sidebar';
 import SettingsPage from '@/components/SettingsPage';
 import ProjectCreateDialog from '@/components/ProjectCreateDialog';
-import EnterpriseProjectForm from '@/components/EnterpriseProjectForm';
+
 import { MaterialThemeProvider } from '@/components/MaterialThemeProvider';
 import { 
   Calculator, 
@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 import BudgetTool from '@/components/BudgetTool';
+import { ThemeToggle } from '@/components/theme-toggle';
+import EnterpriseProjectForm from '@/components/EnterpriseProjectForm';
 
 type ViewType = 'projects' | 'budget' | 'settings';
 type ProjectViewType = 'card' | 'list';
@@ -56,6 +58,8 @@ export default function Dashboard() {
   const [deleting, setDeleting] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
@@ -132,6 +136,33 @@ export default function Dashboard() {
     };
   }, [router, fetchProjects]);
 
+  // Add subscription check
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: subscription, error } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        setHasActiveSubscription(!!subscription);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setHasActiveSubscription(false);
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    if (user) {
+      checkSubscription();
+    }
+  }, [user]);
+
   const handleProjectCreated = async () => {
     if (user) {
       await fetchProjects(user);
@@ -146,8 +177,8 @@ export default function Dashboard() {
   };
 
   const handleShowCreateForm = () => {
-    // Check project limit for free tier users
-    if (projects.length >= 2) {
+    // Check for active subscription instead of project limit
+    if (!hasActiveSubscription) {
       setShowUpgradeModal(true);
       return;
     }
@@ -306,11 +337,15 @@ export default function Dashboard() {
           <div className="flex-1 p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
               {/* Header Section - Add top margin on mobile to avoid hamburger overlap */}
-              <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mt-16 md:mt-0">
+              <div className="flex items-end justify-between md:flex-row md:items-center md:justify-between md:space-y-0 mt-16 md:mt-0">
                 <div>
                   <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
                   <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Plan, prioritize, and accomplish your tasks with ease.</p>
                 </div>
+                <ThemeToggle />
+              </div> 
+              <div> 
+                
                 <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:space-x-4">
                   <button
                     onClick={handleExportData}
@@ -553,8 +588,9 @@ export default function Dashboard() {
                         </div>
                       ))}
 
-                      {/* Project Limit Reached Message */}
-                      {projects.length >= 2 && (
+                      {/* Remove the project limit reached message from card view */}
+                      {/* Keep only if no subscription */}
+                      {!hasActiveSubscription && projects.length === 0 && (
                         <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-yellow-50 dark:bg-yellow-900 rounded-2xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-700">
                           <div className="flex items-start space-x-3">
                             <div className="w-6 h-6 md:w-8 md:h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center flex-shrink-0">
@@ -562,10 +598,10 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-2">
                               <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base font-medium">
-                                Project Limit Reached
+                                Subscription Required
                               </p>
                               <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                                You have reached the maximum number of projects allowed on the free tier. Upgrade to Pro to create unlimited projects.
+                                Subscribe to Pro or Enterprise to create and manage AI projects with CostPilot.
                               </p>
                             </div>
                           </div>
@@ -638,8 +674,8 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Project Limit Reached Message */}
-                      {projects.length >= 2 && (
+                      {/* Project Limit Reached Message - Shown only if no subscription */}
+                      {!hasActiveSubscription && projects.length === 0 && (
                         <div className="bg-yellow-50 dark:bg-yellow-900 rounded-2xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-700">
                           <div className="flex items-start space-x-3">
                             <div className="w-6 h-6 md:w-8 md:h-8 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center flex-shrink-0">
@@ -647,10 +683,10 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-2">
                               <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base font-medium">
-                                Project Limit Reached
+                                Subscription Required
                               </p>
                               <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                                You have reached the maximum number of projects allowed on the free tier. Upgrade to Pro to create unlimited projects.
+                                Subscribe to Pro or Enterprise to create and manage AI projects with CostPilot.
                               </p>
                             </div>
                           </div>
@@ -679,52 +715,35 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-            );
-        }
-      };
+        );
+    }
+  };
     
-      return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-      {/* Mobile Menu Button */}
-      <div className="fixed top-4 left-4 z-50 md:hidden">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-          ) : (
-            <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-          )}
-        </button>
-      </div>
-
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
       <Sidebar
         user={user}
         currentView={currentView}
         onViewChange={handleViewChange}
-        isCollapsed={isSidebarCollapsed}
         isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        projects={projects}
-        onProjectCreated={handleProjectCreated}
-        onProjectSelect={handleProjectSelect}
-        selectedProjectId={selectedProjectId}
-        onToggleCollapse={toggleSidebar}
-      />
+        setIsMobileMenuOpen={setIsMobileMenuOpen} projects={[]} onProjectCreated={function (): void {
+          throw new Error('Function not implemented.');
+        } } onProjectSelect={function (projectId: string): void {
+          throw new Error('Function not implemented.');
+        } } selectedProjectId={null} isCollapsed={false} onToggleCollapse={function (): void {
+          throw new Error('Function not implemented.');
+        } }      />
 
-      {/* Main Content - Properly positioned relative to sidebar */}
+      {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${
-        // On desktop: adjust margin based on sidebar state
-        // On mobile: full width (sidebar overlays)
         isSidebarCollapsed 
           ? 'md:ml-20 ml-0' 
           : 'md:ml-72 ml-0'
       }`}>
         {renderMainContent()}
       </div>
-    
+
       {/* Dropdown Menu Portal - Fixed position outside all containers */}
       {showDropdown && dropdownPosition && projectViewType === 'list' && (
         <>
@@ -806,10 +825,10 @@ export default function Dashboard() {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowUpgradeModal(false)}></div>
-            
+
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-            
-            <div className="relative inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+
+            <div className="relative z-50">
               <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="text-center mb-8">
                   <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
@@ -831,168 +850,165 @@ export default function Dashboard() {
                         Current Plan
                       </span>
                     </div>
-                    
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Free</h4>
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">$0</span>
-                      <span className="text-gray-500 dark:text-gray-400">/month</span>
-                    </div>
-                    
-                    <ul className="space-y-3 mb-6 text-sm">
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Up to 2 projects</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Basic Budget Tracking</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Email Support</span>
-                      </li>
-                    </ul>
-                    
-                    <button
-                      disabled
-                      className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 font-semibold py-3 px-4 rounded-lg cursor-not-allowed"
-                    >
-                      Current Plan
-                    </button>
-                  </div>
 
-                  {/* Pro Plan */}
-                  <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700 transform scale-105">
-                    <div className="absolute top-4 right-4">
-                      <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                        Most Popular
-                      </span>
-                    </div>
-                    
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pro</h4>
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">$19</span>
-                      <span className="text-gray-500 dark:text-gray-400">/month</span>
-                    </div>
-                    
-                    <ul className="space-y-3 mb-6 text-sm">
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Unlimited Projects</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Advanced Analytics</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Priority Support</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Export Data</span>
-                      </li>
-                    </ul>
-                    
-                    <button
-                      onClick={() => {
-                        window.open('https://polar.sh/checkout/3bdd0f57-bac5-4190-8847-f48681c18e43', '_blank');
-                        setShowUpgradeModal(false);
-                      }}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                    >
-                      Upgrade to Pro
-                    </button>
-                    <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-                      7-day free trial • Cancel anytime
-                    </p>
-                  </div>
-
-                  {/* Enterprise Plan */}
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h4>
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">$49</span>
-                      <span className="text-gray-500 dark:text-gray-400">/month</span>
-                    </div>
-                    
-                    <ul className="space-y-3 mb-6 text-sm">
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Everything in Pro</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Team Collaboration</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Custom Integrations</span>
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">Dedicated Support</span>
-                      </li>
-                    </ul>
-                    
-                    <button
-                      onClick={() => {
-                        window.open('https://polar.sh/checkout/3bdd0f57-bac5-4190-8847-f48681c18e43', '_blank');
-                        setShowUpgradeModal(false);
-                      }}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 transform hover:scale-105"
-                    >
-                      Contact Sales
-                    </button>
-                    <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-                      Custom pricing • Volume discounts
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-center border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    ✨ All plans include secure data handling, regular backups, and 99.9% uptime guarantee
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Questions? <a href="mailto:support@costpilot.ai" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Contact our team</a> • 
-                    <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline font-medium ml-2">View detailed comparison</a>
-                  </p>
-                </div>
+              <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Free</h4>
+              <div className="mb-4">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">$0</span>
+                <span className="text-gray-500 dark:text-gray-400">/month</span>
               </div>
-              
 
-              <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Maybe Later
-                </button>
+              <ul className="space-y-3 mb-6 text-sm">
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">2 Projects Maximum</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Basic Budget Tracking</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Email Support</span>
+                </li>
+              </ul>
+
+              <button
+                disabled
+                className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 font-semibold py-3 px-4 rounded-lg cursor-not-allowed"
+              >
+                Current Plan
+              </button>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700 transform scale-105">
+              <div className="absolute top-4 right-4">
+                <span className="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                  Most Popular
+                </span>
               </div>
+
+              <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pro</h4>
+              <div className="mb-4">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">$19</span>
+                <span className="text-gray-500 dark:text-gray-400">/month</span>
+              </div>
+
+              <ul className="space-y-3 mb-6 text-sm">
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Unlimited Projects</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Advanced Analytics</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Priority Support</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Export Data</span>
+                </li>
+              </ul>
+
+              <button
+                onClick={() => {
+                  window.open('https://polar.sh/checkout/3bdd0f57-bac5-4190-8847-f48681c18e43', '_blank');
+                  setShowUpgradeModal(false);
+                } }
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Upgrade to Pro
+              </button>
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
+                7-day free trial • Cancel anytime
+              </p>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+              <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h4>
+              <div className="mb-4">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">$49</span>
+                <span className="text-gray-500 dark:text-gray-400">/month</span>
+              </div>
+
+              <ul className="space-y-3 mb-6 text-sm">
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Everything in Pro</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Team Collaboration</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Custom Integrations</span>
+                </li>
+                <li className="flex items-center">
+                  <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">Dedicated Support</span>
+                </li>
+              </ul>
+
+              <button
+                onClick={() => {
+                  window.open('https://polar.sh/checkout/3bdd0f57-bac5-4190-8847-f48681c18e43', '_blank');
+                  setShowUpgradeModal(false);
+                } }
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 transform hover:scale-105"
+              >
+                Contact Sales
+              </button>
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
+                Custom pricing • Volume discounts
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center border-t border-gray-200 dark:border-gray-700 pt-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              ✨ All plans include secure data handling, regular backups, and 99.9% uptime guarantee
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Questions? <a href="mailto:support@costpilot.ai" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Contact our team</a> •
+              <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline font-medium ml-2">View detailed comparison</a>
+            </p>
+          </div>
+        </div><div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:justify-center">
+            <button
+              type="button"
+              onClick={() => setShowUpgradeModal(false)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Maybe Later
+            </button>
+          </div>
             </div>
           </div>
         </div>

@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
-import PolarSubscriptionButton from './PolarSubscriptionButton';
+import { ThemeToggle } from './theme-toggle';
+import { loadStripe } from '@stripe/stripe-js';
 
 interface UserProfile {
   full_name: string;
@@ -68,8 +69,9 @@ export default function SettingsPage({ user }: SettingsProps) {
   });
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<'success' | 'canceled' | null>(null);
+  const [subscribing, setSubscribing] = useState(false);
 
-  // Updated subscription plans with your actual Polar product ID
+  // Updated subscription plans with your actual Stripe price IDs
   const subscriptionPlans: SubscriptionPlan[] = [
     {
       id: 'free',
@@ -86,7 +88,7 @@ export default function SettingsPage({ user }: SettingsProps) {
       price: 19,
       interval: 'month',
       features: ['Unlimited Projects', 'Advanced Analytics', 'Priority Support', 'Export Data'],
-      productId: '3bdd0f57-bac5-4190-8847-f48681c18e43', // Your actual product ID
+      productId: 'price_pro_monthly', // Replace with your Stripe price ID
       current: userSubscription?.plan_name === 'Pro' && userSubscription.status === 'active'
     },
     {
@@ -95,7 +97,7 @@ export default function SettingsPage({ user }: SettingsProps) {
       price: 49,
       interval: 'month',
       features: ['Everything in Pro', 'Team Collaboration', 'Custom Integrations', 'Dedicated Support'],
-      productId: '3bdd0f57-bac5-4190-8847-f48681c18e43', // Using same product for now
+      productId: 'price_enterprise_monthly', // Replace with your Stripe price ID
       current: userSubscription?.plan_name === 'Enterprise' && userSubscription.status === 'active'
     }
   ];
@@ -217,6 +219,62 @@ export default function SettingsPage({ user }: SettingsProps) {
     }
   };
 
+  const handleStripeCheckout = async (priceId: string, planName: string) => {
+    if (!priceId) return;
+    
+    setSubscribing(true);
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          planName,
+          userId: user.id,
+          userEmail: user.email,
+        }),
+      });
+
+        const { sessionId, url } = await response.json();
+        
+        // Redirect to the checkout URL
+        if (url) {
+          window.location.href = url;
+        } else if (sessionId) {
+          // Fallback: construct URL manually if only sessionId is provided
+          console.error('No checkout URL provided, only session ID');
+          alert('Failed to start checkout. Please try again.');
+        }
+      } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      });
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      alert('Failed to open billing portal. Please try again.');
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'subscription', label: 'Subscription', icon: CreditCard },
@@ -229,11 +287,14 @@ export default function SettingsPage({ user }: SettingsProps) {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center space-x-3 mb-2">
-            <Settings className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <div className="flex items-end justify-between mb-4  mt-12 pl-5">
+            <div className="flex items-center space-x-3 ">
+              <Settings className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+            </div>
+            <ThemeToggle />
           </div>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Manage your account settings and preferences</p>
+          <p className="text-sm pl-5 md:text-base text-gray-600 dark:text-gray-300 i">Manage your account settings and preferences</p>
         </div>
 
         {/* Checkout Status Messages - Same as before but responsive */}
@@ -435,7 +496,7 @@ export default function SettingsPage({ user }: SettingsProps) {
                           <Crown className="h-5 w-5 md:h-6 md:w-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                           <div>
                             <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm md:text-base">
-                              {subscriptionPlans.find(plan => plan.current)?.name || 'Free'} Plan
+                              {subscriptionPlans.find(plan => plan.current)?.name || 'No Active Subscription'} Plan
                             </h4>
                             <p className="text-blue-700 dark:text-blue-300 text-sm">
                               ${subscriptionPlans.find(plan => plan.current)?.price || 0}/{subscriptionPlans.find(plan => plan.current)?.interval} • 
@@ -443,19 +504,28 @@ export default function SettingsPage({ user }: SettingsProps) {
                             </p>
                             {userSubscription && (
                               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                Status: {userSubscription.status} • ID: {userSubscription.polar_subscription_id}
+                                Status: {userSubscription.status}
                               </p>
                             )}
                           </div>
                         </div>
                         <div className="text-left md:text-right">
-                          <p className="text-sm text-blue-600 dark:text-blue-400">Next billing date</p>
-                          <p className="font-medium text-blue-900 dark:text-blue-100 text-sm md:text-base">
-                            {userSubscription 
-                              ? new Date(userSubscription.current_period_end).toLocaleDateString()
-                              : 'N/A (Free Plan)'
-                            }
-                          </p>
+                          {userSubscription ? (
+                            <>
+                              <p className="text-sm text-blue-600 dark:text-blue-400">Next billing date</p>
+                              <p className="font-medium text-blue-900 dark:text-blue-100 text-sm md:text-base">
+                                {new Date(userSubscription.current_period_end).toLocaleDateString()}
+                              </p>
+                              <button
+                                onClick={handleManageSubscription}
+                                className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                              >
+                                Manage Subscription
+                              </button>
+                            </>
+                          ) : (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Subscribe to access projects</p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -464,8 +534,8 @@ export default function SettingsPage({ user }: SettingsProps) {
                   {/* Available Plans */}
                   <div className="mb-6 md:mb-8">
                     <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white mb-4">Available Plans</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                      {subscriptionPlans.map((plan) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                      {subscriptionPlans.filter(plan => plan.price > 0).map((plan) => (
                         <div
                           key={plan.id}
                           className={`border rounded-lg p-4 md:p-6 relative transition-all hover:shadow-lg ${
@@ -499,13 +569,17 @@ export default function SettingsPage({ user }: SettingsProps) {
                             ))}
                           </ul>
 
-                          <PolarSubscriptionButton
-                            productId={plan.productId}
-                            planName={plan.name}
-                            planPrice={plan.price}
-                            isCurrentPlan={plan.current}
-                            disabled={plan.price === 0}
-                          />
+                          <button
+                            onClick={() => handleStripeCheckout(plan.productId, plan.name)}
+                            disabled={plan.current || subscribing}
+                            className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                              plan.current
+                                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
+                          >
+                            {subscribing ? 'Processing...' : plan.current ? 'Current Plan' : `Subscribe to ${plan.name}`}
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -518,20 +592,11 @@ export default function SettingsPage({ user }: SettingsProps) {
                       <div className="flex flex-col space-y-3 md:flex-row md:items-center md:justify-between md:space-y-0">
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-300">
-                            All payments are processed securely through Polar
+                            All payments are processed securely through Stripe
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             You can cancel or modify your subscription at any time
                           </p>
-                        </div>
-                        <div className="flex justify-center md:justify-end">
-                          <Image 
-                            src="https://polar.sh/assets/brand/polar-logo.svg" 
-                            alt="Powered by Polar" 
-                            width={24}
-                            height={24}
-                            className="opacity-60"
-                          />
                         </div>
                       </div>
                     </div>
