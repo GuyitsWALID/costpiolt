@@ -11,7 +11,8 @@ import {
 	BarChart3,
 	LogOut,
 	User2Icon,
-	Telescope
+	Telescope,
+	Target // Add Target icon for Goal Tracking
 } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import type { Project } from '@/lib/supabaseClient';
@@ -52,6 +53,7 @@ export default function Sidebar({
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 	const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
+	const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 	const router = useRouter();
 
 	// Check if we're on mobile
@@ -61,6 +63,28 @@ export default function Sidebar({
 		window.addEventListener('resize', checkMobile);
 		return () => window.removeEventListener('resize', checkMobile);
 	}, []);
+
+	// Check subscription status
+	useEffect(() => {
+		const checkSubscription = async () => {
+			if (!user) return;
+			
+			try {
+				const { data: subscription } = await supabase
+					.from('user_subscriptions')
+					.select('*')
+					.eq('user_id', user.id)
+					.eq('status', 'active')
+					.maybeSingle();
+
+				setHasActiveSubscription(!!subscription);
+			} catch (error) {
+				console.error('Error checking subscription:', error);
+			}
+		};
+
+		checkSubscription();
+	}, [user]);
 
 	// Close mobile menu when route changes
 	useEffect(() => {
@@ -90,8 +114,8 @@ export default function Sidebar({
 	};
 
 	const handleNewProject = () => {
-		// Check project limit for free tier users
-		if (projects.length >= 2) {
+		// Check project limit - 1 project for free tier
+		if (projects.length >= 1 && !hasActiveSubscription) {
 			setShowUpgradeModal(true);
 			return;
 		}
@@ -99,7 +123,8 @@ export default function Sidebar({
 	};
 
 	const handleProjectSelect = (projectId: string) => {
-		onProjectSelect(projectId);
+		// Navigate to estimation page when project is clicked
+		router.push(`/projects/${projectId}/estimation`);
 		if (isMobile && setIsMobileMenuOpen) setIsMobileMenuOpen(false);
 	};
 
@@ -169,8 +194,18 @@ export default function Sidebar({
 						}`}
 						title="Budget Tool"
 					>
-						<Telescope  className={`${isCollapsed && !isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
+						<Telescope className={`${isCollapsed && !isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
 						{(!isCollapsed || isMobile) && <span>Budget Tool</span>}
+					</button>
+
+					{/* New Goal Tracking Button */}
+					<button
+						onClick={() => router.push('/goals')}
+						className={`w-full flex items-center ${isCollapsed && !isMobile ? 'justify-center py-3' : 'space-x-3'} px-3 py-2 rounded-lg transition-colors text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800`}
+						title="Goal Tracking"
+					>
+						<Target className={`${isCollapsed && !isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
+						{(!isCollapsed || isMobile) && <span>Goal Tracking</span>}
 					</button>
 				</nav>
 
@@ -257,7 +292,13 @@ export default function Sidebar({
 
 			{/* Create Project Dialog - Enterprise form */}
 			<MaterialThemeProvider>
-				<EnterpriseProjectForm open={showCreateDialog} onClose={() => setShowCreateDialog(false)} onSuccess={handleCreateProjectSuccess} projectCount={projects.length} />
+				<EnterpriseProjectForm 
+					open={showCreateDialog} 
+					onClose={() => setShowCreateDialog(false)} 
+					onSuccess={handleCreateProjectSuccess} 
+					projectCount={projects.length}
+					hasActiveSubscription={hasActiveSubscription}
+				/>
 			</MaterialThemeProvider>
 
 			{/* Upgrade Modal */}
@@ -419,26 +460,28 @@ export default function Sidebar({
 												window.open('https://polar.sh/checkout/3bdd0f57-bac5-4190-8847-f48681c18e43', '_blank');
 												setShowUpgradeModal(false);
 											}}
-																						className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 md:py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg text-sm"
-																					>
-																						Contact Sales
-																					</button>
-																				</div>
-																			</div>
-																		</div>
-																		<div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-																			<button
-																				type="button"
-																				onClick={() => setShowUpgradeModal(false)}
-																				className="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto sm:text-sm"
-																			>
-																				Close
-																			</button>
-																		</div>
-																	</div>
-																</div>
-															</div>
-														)}
-													</>
-												);
-											}
+											
+																													className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 md:py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg text-sm"
+																												>
+																													Contact Sales
+																												</button>
+																											</div>
+																										</div>
+																									</div>
+																									
+																									<div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+																										<button
+																											type="button"
+																											onClick={() => setShowUpgradeModal(false)}
+																											className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+																										>
+																											Close
+																										</button>
+																									</div>
+																								</div>
+																							</div>
+																					   </div>
+																									)}
+																								</>
+																							);
+																						}

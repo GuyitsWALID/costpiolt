@@ -197,9 +197,9 @@ export default function ProjectCreateDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check project limit before creating
-    if (projectCount >= 2) {
-      setFormErrors({ submit: 'You have reached the limit of 2 projects on the free tier. Please upgrade to Pro to create more projects.' });
+    // Check if user has reached free project limit
+    if (projectCount >= 1) {
+      setFormErrors({ submit: 'You have reached the limit of 1 project on the free tier. Please upgrade to create more projects.' });
       return;
     }
 
@@ -243,6 +243,16 @@ export default function ProjectCreateDialog({
         {formErrors.submit && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {formErrors.submit}
+          </Alert>
+        )}
+
+        {/* Add warning if at limit */}
+        {projectCount >= 1 && (
+          <Alert severity="warning" sx={{ m: 2 }}>
+            <Typography variant="body2">
+              <strong>Free Plan Limit Reached:</strong> You can only create 1 project on the free plan. 
+              Please upgrade to Pro or Enterprise to create unlimited projects.
+            </Typography>
           </Alert>
         )}
 

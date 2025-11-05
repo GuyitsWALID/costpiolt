@@ -51,7 +51,8 @@ import {
   GroupWork,
   MonetizationOn,
   Policy,
-  BugReport
+  BugReport,
+  Check
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -146,6 +147,7 @@ interface EnterpriseProjectFormProps {
   onClose: () => void;
   onSuccess: (projectId: string) => void;
   projectCount: number;
+  hasActiveSubscription: boolean;
 }
 
 const STAGES = [
@@ -162,7 +164,13 @@ const STAGES = [
   { id: 11, title: "Cost Awareness", icon: Warning }
 ];
 
-export default function EnterpriseProjectForm({ open, onClose, onSuccess }: EnterpriseProjectFormProps) {
+export default function EnterpriseProjectForm({ 
+  open, 
+  onClose, 
+  onSuccess, 
+  projectCount,
+  hasActiveSubscription 
+}: EnterpriseProjectFormProps) {
   const [currentStage, setCurrentStage] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     // Initialize with default values
@@ -241,7 +249,9 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
 
   const [saving, setSaving] = useState(false);
   const [showCostPreview, setShowCostPreview] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
+  // Calculate estimated costs based on form data
   const calculateEstimatedCost = useCallback(() => {
     let monthly = 0;
     const breakdown = {
@@ -372,6 +382,15 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
     }
   }, []);
 
+  // Check if user needs to upgrade on mount
+  useEffect(() => {
+    if (open && projectCount >= 1 && !hasActiveSubscription) {
+      setShowUpgradePrompt(true);
+    } else {
+      setShowUpgradePrompt(false);
+    }
+  }, [open, projectCount, hasActiveSubscription]);
+
   const handleNext = () => {
     if (validateCurrentStage()) {
       setCurrentStage(prev => Math.min(prev + 1, STAGES.length));
@@ -448,12 +467,65 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
         const logicalProgression = month6 >= month3 && month12 >= month6 && (!needsMonth24 || month24 >= month12);
         
         return hasUserProjections && hasMonth24 && hasGrowthDetails && logicalProgression;
+      case 7:
+        // Validate Stage 7: Team & Development
+        const hasTeamMembers = 
+          (parseInt(formData.mlEngineers.junior) || 0) > 0 ||
+          (parseInt(formData.mlEngineers.mid) || 0) > 0 ||
+          (parseInt(formData.mlEngineers.senior) || 0) > 0 ||
+          (parseInt(formData.mlEngineers.lead) || 0) > 0 ||
+          (parseInt(formData.devopsEngineers) || 0) > 0;
+        
+        const hasConsultantDetails = !formData.externalConsultants || 
+          (formData.externalConsultants && !!formData.consultantHours);
+        
+        const hasDevelopmentDetails = !!(formData.developmentApproach && formData.developmentDuration);
+        
+        return hasTeamMembers && hasConsultantDetails && hasDevelopmentDetails;
+      
+      case 8:
+        // Validate Stage 8: Advanced Infrastructure
+        return !!(
+          formData.experimentTracking && 
+          formData.modelVersions && 
+          formData.monitoringRequirements && 
+          formData.loggingVolume && 
+          formData.cicdRequirements
+        );
+      
+      case 9:
+        // Validate Stage 9: Compliance & Security
+        const hasComplianceSelection = formData.complianceRequirements.length > 0;
+        const hasDataResidency = !!formData.dataResidency;
+        const hasSecurityPosture = !!formData.securityPosture;
+        
+        return hasComplianceSelection && hasDataResidency && hasSecurityPosture;
+      
+      case 10:
+        // Validate Stage 10: Financial Parameters
+        return !!(
+          formData.budgetPhilosophy && 
+          formData.riskBuffer && 
+          formData.currency && 
+          formData.fundingStatus
+        );
+      
+      case 11:
+        // Validate Stage 11: Cost Awareness
+        // Require at least 8 acknowledged cost areas
+        return formData.hiddenCostsAcknowledged.length >= 8;
     }
 
     return true;
   };
 
   const handleSubmit = async () => {
+    // Check if user has reached free project limit
+    if (projectCount >= 1 && !hasActiveSubscription) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -488,6 +560,7 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
       onSuccess(data.id);
     } catch (error) {
       console.error('Error creating project:', error);
+      alert('Failed to create project. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -1566,7 +1639,932 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
           </Box>
         );
 
-      // Add cases for stages 7-11...
+      case 7:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <People />
+                    <Typography variant="h6">ML/AI Team Composition</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Specify the number of engineers by experience level. Leave blank if not hiring for a role.
+                </Typography>
+                
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                  <TextField
+                    label="Junior ML Engineers"
+                    type="number"
+                    value={formData.mlEngineers.junior}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      mlEngineers: { ...prev.mlEngineers, junior: e.target.value }
+                    }))}
+                    placeholder="0"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="0-2 years experience (~$100k/year)"
+                  />
+                  
+                  <TextField
+                    label="Mid-level ML Engineers"
+                    type="number"
+                    value={formData.mlEngineers.mid}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      mlEngineers: { ...prev.mlEngineers, mid: e.target.value }
+                    }))}
+                    placeholder="0"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="2-5 years experience (~$140k/year)"
+                  />
+                  
+                  <TextField
+                    label="Senior ML Engineers"
+                    type="number"
+                    value={formData.mlEngineers.senior}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      mlEngineers: { ...prev.mlEngineers, senior: e.target.value }
+                    }))}
+                    placeholder="0"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="5-10 years experience (~$190k/year)"
+                  />
+                  
+                  <TextField
+                    label="Lead/Staff ML Engineers"
+                    type="number"
+                    value={formData.mlEngineers.lead}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      mlEngineers: { ...prev.mlEngineers, lead: e.target.value }
+                    }))}
+                    placeholder="0"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="10+ years experience (~$240k/year)"
+                  />
+                </Box>
+
+                <TextField
+                  label="DevOps/MLOps Engineers"
+                  type="number"
+                  value={formData.devopsEngineers}
+                  onChange={(e) => setFormData(prev => ({ ...prev, devopsEngineers: e.target.value }))
+                  }
+                  placeholder="0"
+                  fullWidth
+                  inputProps={{ min: 0, step: 1 }}
+                  helperText="For infrastructure, deployment, and monitoring (~$150k/year)"
+                />
+
+                <Alert severity="info">
+                  <Typography variant="body2">
+                    <strong>Team Size Impact:</strong> Personnel costs typically represent 60-80% of total project costs. 
+                    Consider starting lean and scaling the team as needed.
+                  </Typography>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <GroupWork />
+                    <Typography variant="h6">External Resources & Consultants</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.externalConsultants}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        externalConsultants: e.target.checked,
+                        consultantHours: e.target.checked ? prev.consultantHours : ''
+                      }))}
+                    />
+                  }
+                  label="Planning to use external consultants or contractors"
+                />
+
+                {formData.externalConsultants && (
+                  <TextField
+                    label="Expected Consultant Hours per Month"
+                    type="number"
+                    value={formData.consultantHours}
+                    onChange={(e) => setFormData(prev => ({ ...prev, consultantHours: e.target.value }))
+                    }
+                    placeholder="e.g., 80"
+                    fullWidth
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="Typical rates: $150-300/hour depending on expertise"
+                  />
+                )}
+
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Development Approach *</InputLabel>
+                    <Select
+                      value={formData.developmentApproach}
+                      onChange={(e) => setFormData(prev => ({ ...prev, developmentApproach: e.target.value }))
+                      }
+                      label="Development Approach *"
+                    >
+                      <MenuItem value="agile_iterative">Agile/Iterative (2-week sprints)</MenuItem>
+                      <MenuItem value="waterfall">Waterfall (Sequential phases)</MenuItem>
+                      <MenuItem value="lean_mvp">Lean MVP (Minimum viable product first)</MenuItem>
+                      <MenuItem value="research_first">Research-first (Extensive experimentation)</MenuItem>
+                    </Select>
+                  </FormControl>
+                  
+                  <FormControl fullWidth>
+                    <InputLabel>Development Duration *</InputLabel>
+                    <Select
+                      value={formData.developmentDuration}
+                      onChange={(e) => setFormData(prev => ({ ...prev, developmentDuration: e.target.value }))
+                      }
+                      label="Development Duration *"
+                    >
+                      <MenuItem value="1-3_months">1-3 months (Rapid prototype)</MenuItem>
+                      <MenuItem value="3-6_months">3-6 months (Standard MVP)</MenuItem>
+                      <MenuItem value="6-12_months">6-12 months (Full product)</MenuItem>
+                      <MenuItem value="12_plus_months">12+ months (Enterprise platform)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Team Cost Summary */}
+            {(() => {
+              const totalEngineers = 
+                (parseInt(formData.mlEngineers.junior) || 0) +
+                (parseInt(formData.mlEngineers.mid) || 0) +
+                (parseInt(formData.mlEngineers.senior) || 0) +
+                (parseInt(formData.mlEngineers.lead) || 0) +
+                (parseInt(formData.devopsEngineers) || 0);
+              
+              const estimatedMonthlyCost = 
+                (parseInt(formData.mlEngineers.junior) || 0) * 8333 +
+                (parseInt(formData.mlEngineers.mid) || 0) * 11667 +
+                (parseInt(formData.mlEngineers.senior) || 0) * 15833 +
+                (parseInt(formData.mlEngineers.lead) || 0) * 20000 +
+                (parseInt(formData.devopsEngineers) || 0) * 12500 +
+                (formData.externalConsultants ? (parseInt(formData.consultantHours) || 0) * 200 : 0);
+
+              return totalEngineers > 0 && (
+                <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Team Cost Summary
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3, flexWrap: 'wrap' }}>
+                      <Box sx={{ flex: '1 1 auto' }}>
+                        <Typography variant="caption" color="text.secondary">Total Team Size</Typography>
+                        <Typography variant="h5" fontWeight="bold">{totalEngineers}</Typography>
+                      </Box>
+                      <Box sx={{ flex: '1 1 auto' }}>
+                        <Typography variant="caption" color="text.secondary">Monthly Personnel Cost</Typography>
+                        <Typography variant="h5" fontWeight="bold" color="primary">
+                          ${estimatedMonthlyCost.toLocaleString()}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ flex: '1 1 auto' }}>
+                        <Typography variant="caption" color="text.secondary">Annual Personnel Cost</Typography>
+                        <Typography variant="h6" fontWeight="medium">
+                          ${(estimatedMonthlyCost * 12).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+          </Box>
+        );
+
+      case 8:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <BarChart />
+                    <Typography variant="h6">ML Operations & Experiment Tracking</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Experiment Tracking Solution *</InputLabel>
+                  <Select
+                    value={formData.experimentTracking}
+                    onChange={(e) => setFormData(prev => ({ ...prev, experimentTracking: e.target.value }))
+                    }
+                    label="Experiment Tracking Solution *"
+                  >
+                    <MenuItem value="none">None (Basic logging only)</MenuItem>
+                    <MenuItem value="mlflow">MLflow (Open source)</MenuItem>
+                    <MenuItem value="wandb">Weights & Biases (Premium)</MenuItem>
+                    <MenuItem value="neptune">Neptune.ai (Premium)</MenuItem>
+                    <MenuItem value="comet">Comet.ml (Premium)</MenuItem>
+                    <MenuItem value="custom">Custom solution</MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    Experiment tracking costs: Free (MLflow) to $50-200/user/month (Premium tools)
+                  </FormHelperText>
+                </FormControl>
+
+                <TextField
+                  label="Expected Model Versions per Month *"
+                  type="number"
+                  value={formData.modelVersions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, modelVersions: e.target.value }))
+                  }
+                  placeholder="e.g., 10"
+                  fullWidth
+                  inputProps={{ min: 1, step: 1 }}
+                  helperText="How many model iterations/experiments do you expect to run monthly?"
+                />
+              </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Refresh />
+                    <Typography variant="h6">Monitoring & Observability</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Monitoring Requirements *</InputLabel>
+                  <Select
+                    value={formData.monitoringRequirements}
+                    onChange={(e) => setFormData(prev => ({ ...prev, monitoringRequirements: e.target.value }))
+                    }
+                    label="Monitoring Requirements *"
+                  >
+                    <MenuItem value="basic">Basic (CloudWatch/equivalent only)</MenuItem>
+                    <MenuItem value="standard">Standard (Metrics + basic alerts)</MenuItem>
+                    <MenuItem value="advanced">Advanced (APM, distributed tracing)</MenuItem>
+                    <MenuItem value="enterprise">Enterprise (Full observability stack)</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  label="Estimated Logging Volume (GB/month) *"
+                  type="number"
+                  value={formData.loggingVolume}
+                  onChange={(e) => setFormData(prev => ({ ...prev, loggingVolume: e.target.value }))
+                  }
+                  placeholder="e.g., 100"
+                  fullWidth
+                  inputProps={{ min: 1, step: 1 }}
+                  helperText="Includes application logs, model predictions, and system metrics"
+                />
+
+                <Alert severity="info">
+                  <Typography variant="body2">
+                    <strong>Monitoring Costs:</strong> Typically $0.50-2.50 per GB for log storage and $5-50 per metric per month. 
+                    Advanced APM tools add $50-100 per host/month.
+                  </Typography>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Dns />
+                    <Typography variant="h6">CI/CD & Deployment Pipeline</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>CI/CD Requirements *</InputLabel>
+                  <Select
+                    value={formData.cicdRequirements}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cicdRequirements: e.target.value }))
+                    }
+                    label="CI/CD Requirements *"
+                  >
+                    <MenuItem value="manual">Manual deployment</MenuItem>
+                    <MenuItem value="basic_cicd">Basic CI/CD (GitHub Actions/GitLab CI)</MenuItem>
+                    <MenuItem value="automated_testing">Automated testing + deployment</MenuItem>
+                    <MenuItem value="full_mlops">Full MLOps pipeline (automated retraining)</MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    CI/CD costs range from free (basic) to $500-2000/month (enterprise MLOps platforms)
+                  </FormHelperText>
+                </FormControl>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.requiresDataVersioning || false}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          requiresDataVersioning: e.target.checked 
+                        }))}
+                      />
+                    }
+                    label="Data versioning (DVC, LakeFS)"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.requiresDataValidation || false}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          requiresDataValidation: e.target.checked 
+                        }))}
+                      />
+                    }
+                    label="Automated data validation"
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        );
+
+      case 9:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Security />
+                    <Typography variant="h6">Compliance & Regulatory Requirements</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Select all compliance frameworks your project must adhere to. These significantly impact infrastructure costs.
+                </Typography>
+
+                <FormGroup>
+                  {[
+                    { value: 'none', label: 'No specific compliance requirements', cost: '$0' },
+                    { value: 'gdpr', label: 'GDPR (EU Data Protection)', cost: '+$500-2000/month' },
+                    { value: 'hipaa', label: 'HIPAA (Healthcare)', cost: '+$1000-5000/month' },
+                    { value: 'soc2', label: 'SOC 2 Type II', cost: '+$2000-8000/month' },
+                    { value: 'pci_dss', label: 'PCI DSS (Payment Card)', cost: '+$1000-4000/month' },
+                    { value: 'iso27001', label: 'ISO 27001', cost: '+$1500-6000/month' },
+                    { value: 'ccpa', label: 'CCPA (California Privacy)', cost: '+$300-1500/month' },
+                    { value: 'fedramp', label: 'FedRAMP (US Government)', cost: '+$5000-20000/month' }
+                  ].map((compliance) => (
+                    <Box key={compliance.value} sx={{ mb: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.complianceRequirements.includes(compliance.value)}
+                            onChange={(e) => {
+                              if (compliance.value === 'none') {
+                                // If "none" is checked, clear all others
+                                setFormData(prev => ({
+                                  ...prev,
+                                  complianceRequirements: e.target.checked ? ['none'] : []
+                                }));
+                              } else {
+                                // If any other is checked, remove "none" and toggle the selected
+                                if (e.target.checked) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    complianceRequirements: [
+                                      ...prev.complianceRequirements.filter(c => c !== 'none'),
+                                      compliance.value
+                                    ]
+                                  }));
+                                } else {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    complianceRequirements: prev.complianceRequirements.filter(c => c !== compliance.value)
+                                  }));
+                                }
+                              }
+                            }}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2">{compliance.label}</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {compliance.cost}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </Box>
+                  ))}
+                </FormGroup>
+
+                {formData.complianceRequirements.length > 1 && 
+                 !formData.complianceRequirements.includes('none') && (
+                  <Alert severity="warning">
+                    <Typography variant="body2">
+                      <strong>Multiple Compliance Frameworks:</strong> Each additional compliance requirement 
+                      compounds infrastructure complexity and costs. Consider prioritizing the most critical frameworks first.
+                    </Typography>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Policy />
+                    <Typography variant="h6">Data Residency & Sovereignty</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Data Residency Requirements *</InputLabel>
+                  <Select
+                    value={formData.dataResidency}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dataResidency: e.target.value }))
+                    }
+                    label="Data Residency Requirements *"
+                  >
+                    <MenuItem value="no_restrictions">No specific restrictions</MenuItem>
+                    <MenuItem value="single_country">Must stay in single country</MenuItem>
+                    <MenuItem value="eu_only">EU only (GDPR requirement)</MenuItem>
+                    <MenuItem value="us_only">US only</MenuItem>
+                    <MenuItem value="multi_region_specific">Specific multi-region requirements</MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    Data residency can increase costs by 20-50% due to regional infrastructure requirements
+                  </FormHelperText>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Security Posture *</InputLabel>
+                  <Select
+                    value={formData.securityPosture}
+                    onChange={(e) => setFormData(prev => ({ ...prev, securityPosture: e.target.value }))
+                    }
+                    label="Security Posture *"
+                  >
+                    <MenuItem value="standard">Standard (Industry best practices)</MenuItem>
+                    <MenuItem value="enhanced">Enhanced (Additional security controls)</MenuItem>
+                    <MenuItem value="maximum">Maximum (Zero-trust architecture)</MenuItem>
+                    <MenuItem value="government">Government-grade security</MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    Higher security postures require additional tooling, monitoring, and compliance infrastructure
+                  </FormHelperText>
+                </FormControl>
+              </CardContent>
+            </Card>
+
+            {/* Security Cost Impact */}
+            {formData.complianceRequirements.length > 0 && 
+             !formData.complianceRequirements.includes('none') && (
+              <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Warning />
+                    Compliance Cost Impact
+                  </Typography>
+                  
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Your selected compliance requirements will require:
+                  </Typography>
+
+                  <Box component="ul" sx={{ m: 0, pl: 3 }}>
+                    <li>
+                      <Typography variant="body2">
+                        Encrypted storage at rest and in transit (minimal cost impact)
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2">
+                        Enhanced logging and audit trails (+50-100GB/month storage)
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2">
+                        Data backup and retention policies (2-3x storage costs)
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2">
+                        Security monitoring and incident response tools ($500-5000/month)
+                      </Typography>
+                    </li>
+                    {formData.complianceRequirements.includes('hipaa') && (
+                      <li>
+                        <Typography variant="body2" color="warning.main">
+                          HIPAA: Requires Business Associate Agreements (BAAs) with all cloud providers
+                        </Typography>
+                      </li>
+                    )}
+                    {formData.complianceRequirements.includes('fedramp') && (
+                      <li>
+                        <Typography variant="body2" color="error.main">
+                          FedRAMP: Requires certified cloud regions with significant premium costs
+                        </Typography>
+                      </li>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+          </Box>
+        );
+
+      case 10:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AttachMoney />
+                    <Typography variant="h6">Budget Philosophy & Approach</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Budget Philosophy *</InputLabel>
+                  <Select
+                    value={formData.budgetPhilosophy}
+                    onChange={(e) => setFormData(prev => ({ ...prev, budgetPhilosophy: e.target.value }))
+                    }
+                    label="Budget Philosophy *"
+                  >
+                    <MenuItem value="cost_minimization">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Cost Minimization</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Every dollar counts, aggressive optimization, accept some risk
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="balanced">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Balanced</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Balance cost efficiency with reliability and scalability
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="performance_first">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Performance First</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Prioritize speed and user experience over cost optimization
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="enterprise_grade">
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">Enterprise Grade</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Maximum reliability, redundancy, and support regardless of cost
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Risk Buffer / Contingency *</InputLabel>
+                  <Select
+                    value={formData.riskBuffer}
+                    onChange={(e) => setFormData(prev => ({ ...prev, riskBuffer: e.target.value }))
+                    }
+                    label="Risk Buffer / Contingency *"
+                  >
+                    <MenuItem value="10">10% - Confident estimates, low risk</MenuItem>
+                    <MenuItem value="25">25% - Standard uncertainty buffer</MenuItem>
+                    <MenuItem value="40">40% - High uncertainty, new territory</MenuItem>
+                    <MenuItem value="60">60% - Very high uncertainty, R&D project</MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    Industry standard is 25-40% contingency for AI/ML projects due to experimentation needs
+                  </FormHelperText>
+                </FormControl>
+
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Currency *</InputLabel>
+                  <Select
+                    value={formData.currency}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+                    label="Currency *"
+                  >
+                    <MenuItem value="USD">USD ($)</MenuItem>
+                    <MenuItem value="EUR">EUR (€)</MenuItem>
+                    <MenuItem value="GBP">GBP (£)</MenuItem>
+                    <MenuItem value="CAD">CAD ($)</MenuItem>
+                    <MenuItem value="AUD">AUD ($)</MenuItem>
+                    <MenuItem value="JPY">JPY (¥)</MenuItem>
+                    <MenuItem value="INR">INR (₹)</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Funding Status *</InputLabel>
+                  <Select
+                    value={formData.fundingStatus}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fundingStatus: e.target.value }))}
+                    label="Funding Status *"
+                  >
+                    <MenuItem value="bootstrapped">Bootstrapped</MenuItem>
+                    <MenuItem value="seed_funded">Seed Funded</MenuItem>
+                    <MenuItem value="series_a_plus">Series A+</MenuItem>
+                    <MenuItem value="profitable">Profitable/Self-funded</MenuItem>
+                    <MenuItem value="enterprise_budget">Enterprise Budget</MenuItem>
+                  </Select>
+                </FormControl>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Budget Recommendations */}
+            <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Budget Optimization Recommendations
+                </Typography>
+                
+                {formData.budgetPhilosophy === 'cost_minimization' && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Cost Minimization Strategy:</strong> We'll recommend spot instances, 
+                      aggressive auto-scaling, minimal redundancy, and open-source tools where possible. 
+                      Expect potential service interruptions but 50-70% cost savings.
+                    </Typography>
+                  </Alert>
+                )}
+
+                {formData.budgetPhilosophy === 'balanced' && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Balanced Approach:</strong> We'll mix reserved instances with auto-scaling, 
+                      standard redundancy, and proven commercial tools. This provides 99.9% uptime with 
+                      moderate cost optimization.
+                    </Typography>
+                  </Alert>
+                )}
+
+                {formData.budgetPhilosophy === 'performance_first' && (
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Performance Priority:</strong> Premium compute resources, CDN, multi-region 
+                      deployment, and real-time monitoring. Expect 30-50% higher costs but sub-second latency 
+                      and 99.99% uptime.
+                    </Typography>
+                  </Alert>
+                )}
+
+                {formData.budgetPhilosophy === 'enterprise_grade' && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Enterprise Grade:</strong> Dedicated resources, 24/7 support, multi-region 
+                      active-active deployment, comprehensive monitoring. Expect 2-3x baseline costs but 
+                      maximum reliability and support.
+                    </Typography>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </Box>
+        );
+
+      case 11:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Warning />
+                    <Typography variant="h6">Hidden Costs & Often Overlooked Expenses</Typography>
+                  </Box>
+                }
+              />
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Alert severity="warning">
+                  <Typography variant="body2" paragraph>
+                    <strong>Important:</strong> AI/ML projects often have hidden costs that can represent 
+                    30-50% of total project expenses. Review and acknowledge these areas:
+                  </Typography>
+                </Alert>
+
+                <FormGroup>
+                  {[{
+                    value: 'data_quality',
+                    title: 'Data Quality & Cleaning',
+                    description: 'Data preprocessing, cleaning, and quality assurance can take 40-60% of project time',
+                    cost: '$5,000-50,000'
+                  },
+                  {
+                    value: 'experimentation',
+                    title: 'Experimentation & Failed Attempts',
+                    description: 'Average 5-10 failed experiments per successful model. GPU time adds up quickly',
+                    cost: '2-5x your initial compute estimate'
+                  },
+                  {
+                    value: 'model_monitoring',
+                    title: 'Model Monitoring & Maintenance',
+                    description: 'Ongoing monitoring, retraining, and drift detection',
+                    cost: '$500-5,000/month ongoing'
+                  },
+                  {
+                    value: 'data_labeling',
+                    title: 'Data Labeling & Annotation',
+                    description: 'If you need human-labeled data, costs range widely',
+                    cost: '$0.01-10 per label depending on complexity'
+                  },
+                  {
+                    value: 'api_rate_limits',
+                    title: 'API Rate Limits & Overages',
+                    description: 'Exceeding rate limits or quotas can result in expensive overage charges',
+                    cost: 'Up to 2-3x standard rates for overages'
+                  },
+                  {
+                    value: 'egress_costs',
+                    title: 'Data Egress & Transfer Costs',
+                    description: 'Moving data between regions or out of cloud can be surprisingly expensive',
+                    cost: '$0.08-0.20 per GB transferred'
+                  },
+                  {
+                    value: 'support_licenses',
+                    title: 'Support & Software Licenses',
+                    description: 'Enterprise support contracts, ML platform licenses, monitoring tools',
+                    cost: '$1,000-10,000/month'
+                  },
+                  {
+                    value: 'training_time',
+                    title: 'Team Training & Ramp-up',
+                    description: 'Learning new tools, frameworks, and cloud platforms takes time',
+                    cost: '20-40 hours per team member'
+                  },
+                  {
+                    value: 'model_interpretability',
+                    title: 'Model Interpretability & Explainability',
+                    description: 'Building trust through explainable AI, especially for regulated industries',
+                    cost: '$10,000-100,000 for enterprise solutions'
+                  },
+                  {
+                    value: 'disaster_recovery',
+                    title: 'Disaster Recovery & Backup',
+                    description: 'Automated backups, point-in-time recovery, disaster recovery testing',
+                    cost: '20-50% of primary infrastructure cost'
+                  },
+                  {
+                    value: 'technical_debt',
+                    title: 'Technical Debt & Refactoring',
+                    description: 'MVP code needs refactoring; infrastructure needs hardening for production',
+                    cost: '30-50% of initial development cost'
+                  },
+                  {
+                    value: 'regulatory_compliance',
+                    title: 'Regulatory Compliance Audits',
+                    description: 'Third-party audits, penetration testing, compliance certifications',
+                    cost: '$15,000-100,000 per audit'
+                  }].map((cost) => (
+                    <Box 
+                      key={cost.value} 
+                      sx={{ 
+                        mb: 2, 
+                        p: 2, 
+                        border: '1px solid',
+                        borderColor: formData.hiddenCostsAcknowledged.includes(cost.value) 
+                          ? 'success.main' 
+                          : 'divider',
+                        borderRadius: 1,
+                        backgroundColor: formData.hiddenCostsAcknowledged.includes(cost.value)
+                          ? 'success.lighter'
+                          : 'background.paper'
+                      }}
+                    >
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.hiddenCostsAcknowledged.includes(cost.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  hiddenCostsAcknowledged: [...prev.hiddenCostsAcknowledged, cost.value]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  hiddenCostsAcknowledged: prev.hiddenCostsAcknowledged.filter(c => c !== cost.value)
+                                }));
+                              }
+                            }}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">{cost.title}</Typography>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {cost.description}
+                            </Typography>
+                            <Typography variant="caption" color="warning.main" fontWeight="medium">
+                              Typical Cost: {cost.cost}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </Box>
+                  ))}
+                </FormGroup>
+
+                {formData.hiddenCostsAcknowledged.length < 8 && (
+                  <Alert severity="warning">
+                    <Typography variant="body2">
+                      <strong>Recommendation:</strong> Review and acknowledge at least 8 of these cost areas 
+                      to proceed. This ensures you have a comprehensive understanding of potential expenses.
+                    </Typography>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Final submission note */}
+            {formData.hiddenCostsAcknowledged.length >= 8 && (
+              <Alert severity="success">
+                <Typography variant="body2">
+                  <strong>Ready to Generate Forecast!</strong> You've completed all sections and 
+                  acknowledged the major cost considerations. Click "Generate Budget Forecast" to create 
+                  your comprehensive budget analysis.
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Budget Summary */}
+            <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <MonetizationOn />
+                  Acknowledged Cost Areas: {formData.hiddenCostsAcknowledged.length} of 12
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  Unacknowledged areas represent blind spots that could impact your project budget.
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Final submission note */}
+            {formData.hiddenCostsAcknowledged.length >= 8 && (
+              <Alert severity="success">
+                <Typography variant="body2">
+                  <strong>Ready to Generate Forecast!</strong> You've completed all sections and 
+                  acknowledged the major cost considerations. Click "Generate Budget Forecast" to create 
+                  your comprehensive budget analysis.
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Budget Summary */}
+            <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <MonetizationOn />
+                  Acknowledged Cost Areas: {formData.hiddenCostsAcknowledged.length} of 12
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  Your budget forecast will include estimated ranges for all acknowledged cost areas. 
+                  Unacknowledged areas represent blind spots that could impact your project budget.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
+        );
+
       default:
         return (
           <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -1591,136 +2589,318 @@ export default function EnterpriseProjectForm({ open, onClose, onSuccess }: Ente
         sx: { height: '90vh', maxHeight: '90vh' }
       }}
     >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Calculate />
-          Enterprise Budget Forecasting
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, overflow: 'auto' }}>
-        {/* Progress Bar */}
-        <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="body2" fontWeight="medium">
-              Stage {currentStage} of {STAGES.length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {Math.round(progress)}% Complete
-            </Typography>
-          </Box>
-          <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
-        </Box>
-
-        {/* Cost Preview */}
-        {estimatedCost.monthly > 0 && (
-          <Alert 
-            severity="info" 
-            sx={{ 
-              background: (theme) => theme.palette.mode === 'dark' 
-            ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-            : 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-              '& .MuiAlert-message': { width: '100%' }
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-            <Typography variant="body2" color="text.secondary">
-              Estimated Monthly Cost
-            </Typography>
-            <Typography variant="h5" fontWeight="bold" color="primary">
-              ${estimatedCost.monthly.toLocaleString()}
-            </Typography>
-              </Box>
-              <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="body2" color="text.secondary">
-              Total Project Cost
-            </Typography>
-            <Typography variant="h6" fontWeight="medium">
-              ${estimatedCost.total.toLocaleString()}
-            </Typography>
-              </Box>
+      {/* Upgrade Prompt Overlay */}
+      {showUpgradePrompt ? (
+        <>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Warning color="warning" />
+              Upgrade Required
             </Box>
-          </Alert>
-        )}
+          </DialogTitle>
 
-        {/* Stage Navigation */}
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stepper activeStep={currentStage - 1} alternativeLabel sx={{ flexWrap: 'wrap' }}>
-            {STAGES.map((stage) => {
-              const Icon = stage.icon;
-              return (
-                <Step key={stage.id} onClick={() => setCurrentStage(stage.id)} sx={{ cursor: 'pointer' }}>
-                  <StepLabel 
-                    icon={<Icon />}
-                    StepIconProps={{
-                      sx: { 
-                        color: currentStage === stage.id ? 'primary.main' : 
-                               currentStage > stage.id ? 'success.main' : 'action.disabled'
-                      }
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, overflow: 'auto' }}>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Free Plan Limit Reached
+              </Typography>
+              <Typography variant="body2" paragraph>
+                You've created your free project. To create more projects and unlock advanced features, 
+                please upgrade to a paid plan.
+              </Typography>
+            </Alert>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 3 }}>
+              {/* Pro Plan Card */}
+              <Card 
+                variant="outlined" 
+                sx={{ 
+                  p: 3, 
+                  border: '2px solid',
+                  borderColor: 'primary.main',
+                  position: 'relative',
+                  '&:hover': { boxShadow: 4 }
+                }}
+              >
+                <Box sx={{ position: 'absolute', top: -12, right: 16 }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      bgcolor: 'primary.main', 
+                      color: 'white', 
+                      px: 2, 
+                      py: 0.5, 
+                      borderRadius: 2,
+                      fontWeight: 'bold'
                     }}
                   >
-                    <Typography variant="caption" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                      {stage.title}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-              );
-            })}
-          </Stepper>
-        </Paper>
+                    Most Popular
+                  </Typography>
+                </Box>
 
-        {/* Current Stage Content */}
-        <Box>
-          <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {React.createElement(STAGES[currentStage - 1].icon)}
-            {STAGES[currentStage - 1].title}
-          </Typography>
-          {renderStage()}
-        </Box>
-      </DialogContent>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Pro
+                </Typography>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h3" component="span" fontWeight="bold">
+                    $19
+                  </Typography>
+                  <Typography variant="body1" component="span" color="text.secondary">
+                    /month
+                  </Typography>
+                </Box>
 
-      <DialogActions sx={{ justifyContent: 'space-between', p: 3 }}>
-        <Button
-          variant="outlined"
-          onClick={handlePrevious}
-          disabled={currentStage === 1}
-          startIcon={<ChevronLeft />}
-        >
-          Previous
-        </Button>
+                <Box component="ul" sx={{ mb: 3, pl: 0, listStyle: 'none' }}>
+                  {['Unlimited Projects', 'Advanced Analytics', 'Priority Support', 'Export Data'].map((feature) => (
+                    <Box component="li" key={feature} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Check sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                      <Typography variant="body2">{feature}</Typography>
+                    </Box>
+                  ))}
+                </Box>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              localStorage.setItem('enterpriseProjectForm', JSON.stringify({ formData, currentStage }));
-            }}
-            startIcon={<Save />}
-          >
-            Save Progress
-          </Button>
-          
-          {currentStage < STAGES.length ? (
-            <Button 
-              variant="contained"
-              onClick={handleNext} 
-              disabled={!validateCurrentStage()}
-              endIcon={<ChevronRight />}
-            >
-              Next
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  onClick={async () => {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      const response = await fetch('/api/create-checkout-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          priceId: 'price_1SQ3aBIPj9aniqVHab8m4DZ8',
+                          planName: 'Pro',
+                          userId: user?.id,
+                          userEmail: user?.email,
+                        }),
+                      });
+                      const { url } = await response.json();
+                      if (url) window.location.href = url;
+                    } catch (error) {
+                      console.error('Error:', error);
+                    }
+                  }}
+                >
+                  Upgrade to Pro
+                </Button>
+              </Card>
+
+              {/* Enterprise Plan Card */}
+              <Card variant="outlined" sx={{ p: 3, '&:hover': { boxShadow: 4 } }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Enterprise
+                </Typography>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h3" component="span" fontWeight="bold">
+                    $49
+                  </Typography>
+                  <Typography variant="body1" component="span" color="text.secondary">
+                    /month
+                  </Typography>
+                </Box>
+
+                <Box component="ul" sx={{ mb: 3, pl: 0, listStyle: 'none' }}>
+                  {['Everything in Pro', 'Team Collaboration', 'Custom Integrations', 'Dedicated Support'].map((feature) => (
+                    <Box component="li" key={feature} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Check sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                      <Typography variant="body2">{feature}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  size="large"
+                  onClick={async () => {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      const response = await fetch('/api/create-checkout-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          priceId: 'price_1SQ3dBIPj9aniqVHBrhp0ZVf',
+                          planName: 'Enterprise',
+                          userId: user?.id,
+                          userEmail: user?.email,
+                        }),
+                      });
+                      const { url } = await response.json();
+                      if (url) window.location.href = url;
+                    } catch (error) {
+                      console.error('Error:', error);
+                    }
+                  }}
+                >
+                  Upgrade to Enterprise
+                </Button>
+              </Card>
+            </Box>
+
+            <Alert severity="info">
+              <Typography variant="body2">
+                <strong>💡 Why upgrade?</strong><br />
+                • Create unlimited AI projects<br />
+                • Access advanced budget forecasting tools<br />
+                • Get detailed cost breakdowns and optimization recommendations<br />
+                • Priority support for your questions
+              </Typography>
+            </Alert>
+          </DialogContent>
+
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={onClose} variant="outlined">
+              Cancel
             </Button>
-          ) : (
-            <Button 
-              variant="contained"
-              onClick={handleSubmit} 
-              disabled={saving || !validateCurrentStage()}
+          </DialogActions>
+        </>
+      ) : (
+        <>
+          {/* Original Form Content */}
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Calculate />
+              Enterprise Budget Forecasting
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, overflow: 'auto' }}>
+            {/* Progress Bar */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" fontWeight="medium">
+                  Stage {currentStage} of {STAGES.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {Math.round(progress)}% Complete
+                </Typography>
+              </Box>
+              <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+            </Box>
+
+            {/* Free Project Indicator */}
+            {!hasActiveSubscription && projectCount === 0 && (
+              <Alert severity="success" icon={<Info />}>
+                <Typography variant="body2">
+                  <strong>🎉 Creating your FREE project!</strong><br />
+                  This is your complimentary project. Upgrade anytime to create unlimited projects.
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Cost Preview */}
+            {estimatedCost.monthly > 0 && (
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  background: (theme) => theme.palette.mode === 'dark' 
+                ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
+                : 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                  '& .MuiAlert-message': { width: '100%' }
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Estimated Monthly Cost
+                </Typography>
+                <Typography variant="h5" fontWeight="bold" color="primary">
+                  ${estimatedCost.monthly.toLocaleString()}
+                </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Total Project Cost
+                </Typography>
+                <Typography variant="h6" fontWeight="medium">
+                  ${estimatedCost.total.toLocaleString()}
+                </Typography>
+                  </Box>
+                </Box>
+              </Alert>
+            )}
+
+            {/* Stage Navigation */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stepper activeStep={currentStage - 1} alternativeLabel sx={{ flexWrap: 'wrap' }}>
+                {STAGES.map((stage) => {
+                  const Icon = stage.icon;
+                  return (
+                    <Step key={stage.id} onClick={() => setCurrentStage(stage.id)} sx={{ cursor: 'pointer' }}>
+                      <StepLabel 
+                        icon={<Icon />}
+                        StepIconProps={{
+                          sx: { 
+                            color: currentStage === stage.id ? 'primary.main' : 
+                                   currentStage > stage.id ? 'success.main' : 'action.disabled'
+                          }
+                        }}
+                      >
+                        <Typography variant="caption" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                          {stage.title}
+                        </Typography>
+                      </StepLabel>
+                    </Step>
+                  );
+                })}
+              </Stepper>
+            </Paper>
+
+            {/* Current Stage Content */}
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {React.createElement(STAGES[currentStage - 1].icon)}
+                {STAGES[currentStage - 1].title}
+              </Typography>
+              {renderStage()}
+            </Box>
+          </DialogContent>
+
+          <DialogActions sx={{ justifyContent: 'space-between', p: 3 }}>
+            <Button
+              variant="outlined"
+              onClick={handlePrevious}
+              disabled={currentStage === 1}
+              startIcon={<ChevronLeft />}
             >
-              {saving ? 'Creating...' : 'Generate Budget Forecast'}
+              Previous
             </Button>
-          )}
-        </Box>
-      </DialogActions>
+
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  localStorage.setItem('enterpriseProjectForm', JSON.stringify({ formData, currentStage }));
+                }}
+                startIcon={<Save />}
+              >
+                Save Progress
+              </Button>
+              
+              {currentStage < STAGES.length ? (
+                <Button 
+                  variant="contained"
+                  onClick={handleNext} 
+                  disabled={!validateCurrentStage()}
+                  endIcon={<ChevronRight />}
+                >
+                  Next
+                </Button>
+              ) : (
+                <Button 
+                  variant="contained"
+                  onClick={handleSubmit} 
+                  disabled={saving || !validateCurrentStage()}
+                >
+                  {saving ? 'Creating...' : 'Generate Budget Forecast'}
+                </Button>
+              )}
+            </Box>
+          </DialogActions>
+        </>
+      )}
     </Dialog>
   );
 }

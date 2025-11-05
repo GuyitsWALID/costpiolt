@@ -71,14 +71,14 @@ export default function SettingsPage({ user }: SettingsProps) {
   const [checkoutStatus, setCheckoutStatus] = useState<'success' | 'canceled' | null>(null);
   const [subscribing, setSubscribing] = useState(false);
 
-  // Updated subscription plans with your actual Stripe price IDs
+  // Updated subscription plans with your actual Stripe Price IDs
   const subscriptionPlans: SubscriptionPlan[] = [
     {
       id: 'free',
       name: 'Free',
       price: 0,
       interval: 'month',
-      features: ['3 Projects', 'Basic Budget Tracking', 'Email Support'],
+      features: ['1 Project', 'Basic Budget Tracking', 'Email Support'], // Changed from '3 Projects' to '1 Project'
       productId: '', // No product ID for free plan
       current: !userSubscription || userSubscription.status !== 'active'
     },
@@ -88,7 +88,7 @@ export default function SettingsPage({ user }: SettingsProps) {
       price: 19,
       interval: 'month',
       features: ['Unlimited Projects', 'Advanced Analytics', 'Priority Support', 'Export Data'],
-      productId: 'price_pro_monthly', // Replace with your Stripe price ID
+      productId: 'price_1SQ3aBIPj9aniqVHab8m4DZ8', // Pro price ID
       current: userSubscription?.plan_name === 'Pro' && userSubscription.status === 'active'
     },
     {
@@ -97,7 +97,7 @@ export default function SettingsPage({ user }: SettingsProps) {
       price: 49,
       interval: 'month',
       features: ['Everything in Pro', 'Team Collaboration', 'Custom Integrations', 'Dedicated Support'],
-      productId: 'price_enterprise_monthly', // Replace with your Stripe price ID
+      productId: 'price_1SQ3dBIPj9aniqVHBrhp0ZVf', // Enterprise price ID
       current: userSubscription?.plan_name === 'Enterprise' && userSubscription.status === 'active'
     }
   ];

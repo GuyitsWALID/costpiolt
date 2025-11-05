@@ -9,6 +9,13 @@ export async function POST(req: NextRequest) {
   try {
     const { priceId, planName, userId, userEmail } = await req.json();
 
+    if (!priceId || !planName || !userId || !userEmail) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -18,20 +25,29 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true&plan=${planName}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
       customer_email: userEmail,
       metadata: {
         userId,
         planName,
       },
+      subscription_data: {
+        metadata: {
+          userId,
+          planName,
+        },
+      },
     });
 
-    return NextResponse.json({ sessionId: session.id });
+    return NextResponse.json({ 
+      sessionId: session.id,
+      url: session.url 
+    });
   } catch (error: any) {
-    console.error('Error creating checkout session:', error);
+    console.error('Stripe checkout session error:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || 'Failed to create checkout session' },
       { status: 500 }
     );
   }
